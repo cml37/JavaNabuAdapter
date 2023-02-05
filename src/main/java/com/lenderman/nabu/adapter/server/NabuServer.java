@@ -263,7 +263,7 @@ public class NabuServer
                 return;
             }
 
-            this.readByte((byte) 0x6);
+            this.readByte(0x6);
             this.sendSegment(nabuPak.get().getPakSegments().get(segmentNumber));
             this.writeBytes(0x10, 0xE1);
         }

@@ -71,10 +71,11 @@ public class SegmentManager
      * @return NabuPak
      */
     public static NabuPak loadSegments(String pakName, byte[] data)
+            throws Exception
     {
         if (data.length > 0xFFFFL)
         {
-            System.out.println("File " + pakName + " is too large");
+            throw new Exception("File " + pakName + " is too large");
         }
         ByteArrayInputStream baos = new ByteArrayInputStream(data);
         List<NabuSegment> list = new ArrayList<NabuSegment>();
@@ -114,10 +115,11 @@ public class SegmentManager
      * @return NabuPak
      */
     public static NabuPak createSegments(String pakName, byte[] data)
+            throws Exception
     {
         if (data.length > 0xFFFFL)
         {
-            System.out.println("File " + pakName + " is too large");
+            throw new Exception("File " + pakName + " is too large");
         }
         ByteArrayInputStream baos = new ByteArrayInputStream(data);
         List<NabuSegment> segments = new ArrayList<NabuSegment>();
@@ -181,18 +183,18 @@ public class SegmentManager
         byte b = 0x20;
         if (offset < 0x80)
         {
-            b = (byte) (b | (byte) 0x81);
+            b = (byte) (b | 0x81);
         }
         if (lastSegment)
         {
-            b = (byte) (b | (byte) 0x10);
+            b = (byte) (b | 0x10);
         }
 
         list.add(b);
         list.add(segmentNumber);
-        list.add((byte) 0x0);
-        list.add((byte) ((int) (offset + 0x12 >> 8) & 0xFF));
-        list.add((byte) ((int) (offset + 0x12) & 0xFF));
+        list.add(byteVal(0x0));
+        list.add(byteVal((int) (offset + 0x12 >> 8) & 0xFF));
+        list.add(byteVal((int) (offset + 0x12) & 0xFF));
 
         // Payload
         for (byte value : data)
