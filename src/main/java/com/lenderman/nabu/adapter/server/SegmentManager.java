@@ -129,7 +129,7 @@ public class SegmentManager
         {
             byte[] buffer = new byte[NabuSegment.SegmentDataLength];
             int bytesRead = baos.read(buffer, 0, buffer.length);
-            if (bytesRead == 0)
+            if (bytesRead == -1)
             {
                 // We're done
                 break;
