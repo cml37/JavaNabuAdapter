@@ -82,26 +82,30 @@ public class NabuServer
      */
     public void runServer()
     {
+        boolean initialized = false;
+
+        System.out.println("Listening for Nabu");
+
+        // Start the server first, but if we hit an exception, terminate
         try
         {
-            boolean initialized = false;
-            boolean err = false;
+            this.startServer();
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+            return;
+        }
 
-            // Start the server first, but if we hit an exception, terminate
+        while (true)
+        {
             try
             {
-                this.startServer();
-            }
-            catch (Exception ex)
-            {
-                ex.printStackTrace();
-                return;
-            }
+                if (!this.connection.isConnected())
+                {
+                    throw new Exception("Connection Lost");
+                }
 
-            System.out.println("Listening for Nabu");
-            while (this.connection != null && this.connection.isConnected()
-                    && !err)
-            {
                 switch (this.readByte())
                 {
                 case 0x85: // Channel
@@ -138,21 +142,27 @@ public class NabuServer
                     break;
                 case 0xF:
                     break;
-                case 0xFF:
+                case -1:
                     // Well, we are reading garbage, socket has probably closed,
                     // quit this loop
-                    err = true;
-                    break;
+                    throw new Exception("Socket disconnected");
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-        }
-        finally
-        {
-            this.stopServer();
+            catch (Exception ex)
+            {
+                ex.printStackTrace();
+                initialized = false;
+                this.stopServer();
+                try
+                {
+                    this.startServer();
+                }
+                catch (Exception ex2)
+                {
+                    ex2.printStackTrace();
+                    return;
+                }
+            }
         }
     }
 
