@@ -17,8 +17,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_15
-    targetCompatibility = JavaVersion.VERSION_15
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 jar {
@@ -32,8 +32,6 @@ jar {
 
 dependencies {
     // Use JUnit test framework
-    // TODO fix logging, replace System.out with logging statements
-	//	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.19.0'
-	implementation group: 'com.fazecast', name: 'jSerialComm', version: '2.9.3'
+    implementation group: 'com.fazecast', name: 'jSerialComm', version: '2.9.3'
 }
 
