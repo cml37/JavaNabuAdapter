@@ -21,6 +21,15 @@ java {
     targetCompatibility = JavaVersion.VERSION_15
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.lenderman.nabu.adapter.NabuAdapter'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 dependencies {
     // Use JUnit test framework
     // TODO fix logging, replace System.out with logging statements
