@@ -38,6 +38,7 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
+    @Override
     public InputStream getNabuInputStream()
     {
         return nabuInputStream;
@@ -46,6 +47,7 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
+    @Override
     public OutputStream getNabuOutputStream()
     {
         return nabuOutputStream;
@@ -54,6 +56,7 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isConnected()
     {
         return serialPort.isOpen();
@@ -62,6 +65,7 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
+    @Override
     public void startServer() throws Exception
     {
         this.serialPort = SerialPort.getCommPort(comPort);
@@ -85,6 +89,7 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
+    @Override
     public void stopServer()
     {
         this.serialPort.closePort();

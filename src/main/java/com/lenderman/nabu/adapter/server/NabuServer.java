@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import com.lenderman.nabu.adapter.connection.Connection;
 import com.lenderman.nabu.adapter.connection.SerialConnection;
+import com.lenderman.nabu.adapter.connection.TcpConnection;
 import com.lenderman.nabu.adapter.model.NabuPak;
 import com.lenderman.nabu.adapter.model.NabuSegment;
 import com.lenderman.nabu.adapter.model.Settings;
@@ -51,14 +52,15 @@ public class NabuServer
     {
         this.stopServer();
 
-        // TODO add support for TCP
         switch (this.settings.getOperatingMode())
         {
         case Serial:
             this.connection = new SerialConnection(this.settings.getPort());
             break;
         case TCPIP:
-            throw new Exception("TCP/IP Not yet supported");
+            this.connection = new TcpConnection(
+                    Integer.parseInt(this.settings.getPort()));
+            break;
         }
 
         this.connection.startServer();
