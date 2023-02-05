@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.connection.Connection;
 import com.lenderman.nabu.adapter.connection.SerialConnection;
 import com.lenderman.nabu.adapter.connection.TcpConnection;
@@ -20,6 +22,11 @@ import com.lenderman.nabu.adapter.model.Settings;
  */
 public class NabuServer
 {
+    /**
+     * Class Logger
+     */
+    private static final Logger logger = LogManager.getLogger(NabuServer.class);
+
     /**
      * Nabu connection
      */
@@ -50,6 +57,7 @@ public class NabuServer
      */
     public void startServer() throws Exception
     {
+        logger.debug("Begin startServer");
         this.stopServer();
 
         switch (this.settings.getOperatingMode())
@@ -71,6 +79,7 @@ public class NabuServer
      */
     public void stopServer()
     {
+        logger.debug("Stopping server if running");
         if (this.connection != null && this.connection.isConnected())
         {
             this.connection.stopServer();
@@ -84,7 +93,7 @@ public class NabuServer
     {
         boolean initialized = false;
 
-        System.out.println("Listening for Nabu");
+        logger.info("Listening for Nabu");
 
         // Start the server first, but if we hit an exception, terminate
         try
@@ -93,7 +102,7 @@ public class NabuServer
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            logger.error("Exception starting server", ex);
             return;
         }
 
@@ -110,9 +119,8 @@ public class NabuServer
                 {
                 case 0x85: // Channel
                     this.writeBytes(0x10, 0x6);
-                    System.out
-                            .println("Received Channel " + String.format("%08",
-                                    this.readByte() + (this.readByte() << 8)));
+                    logger.debug("Received Channel {}", String.format("%08",
+                            this.readByte() + (this.readByte() << 8)));
                     this.writeBytes(0xE4);
                     break;
                 case 0x84: // File Transfer
@@ -150,7 +158,7 @@ public class NabuServer
             }
             catch (Exception ex)
             {
-                ex.printStackTrace();
+                logger.error("Exception in server runloop", ex);
                 initialized = false;
                 this.stopServer();
                 try
@@ -159,7 +167,8 @@ public class NabuServer
                 }
                 catch (Exception ex2)
                 {
-                    ex2.printStackTrace();
+                    logger.error("Exception starting server in server runloop",
+                            ex2);
                     return;
                 }
             }
@@ -178,8 +187,8 @@ public class NabuServer
         int pakFileName = this.getRequestedPakFile();
 
         String pakName = String.format("%06x", pakFileName);
-        System.out.println("Nabu requesting file " + pakName + " and segment "
-                + String.format("%06x", segmentNumber));
+        logger.debug("Nabu requesting file {} and segment {}", pakName,
+                String.format("%06x", segmentNumber));
 
         // ok
         this.writeBytes(0xE4);
@@ -251,8 +260,9 @@ public class NabuServer
                     {
                         // Nabu can't do anything without an initial pack -
                         // throw and be done.
-                        System.out.println("Initial nabu file of " + pakName
-                                + " was not found, fix this");
+                        logger.error(
+                                "Initial nabu file of {} was not found, fix this",
+                                pakName);
                     }
 
                     // File not found, write unauthorized
@@ -377,7 +387,7 @@ public class NabuServer
             }
             else
             {
-                System.out.println("Asking for channel");
+                logger.debug("Asking for channel");
                 this.writeBytes(0x9F, 0x10, 0xE1);
             }
         }

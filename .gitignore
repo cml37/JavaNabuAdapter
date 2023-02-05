@@ -10,3 +10,6 @@ bin
 .project
 .settings
 .classpath
+
+# Ignore logging artifacts
+*.log

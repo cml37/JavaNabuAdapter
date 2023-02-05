@@ -5,9 +5,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TcpConnection implements Connection
 {
+    /**
+     * Class Logger
+     */
+    private static final Logger logger = LogManager
+            .getLogger(TcpConnection.class);
+
     /**
      * TCP/IP Port
      */
@@ -94,7 +102,7 @@ public class TcpConnection implements Connection
         }
         catch (IOException e)
         {
-            // Do nothing
+            logger.error("Could not close socket", e);
         }
         try
         {
@@ -102,7 +110,7 @@ public class TcpConnection implements Connection
         }
         catch (IOException e)
         {
-            // Do nothing
+            logger.error("Could not close server socket", e);
         }
     }
 }

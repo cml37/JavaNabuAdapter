@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.model.NabuPak;
 import com.lenderman.nabu.adapter.model.NabuSegment;
 import com.lenderman.nabu.adapter.utilities.CRC;
@@ -14,12 +16,20 @@ import com.lenderman.nabu.adapter.utilities.CRC;
 public class SegmentManager
 {
     /**
+     * Class Logger
+     */
+    private static final Logger logger = LogManager
+            .getLogger(SegmentManager.class);
+
+    /**
      * Create the time segment that the nabu can parse.
      * 
      * @return NabuPak
      */
     public static NabuPak createTimePak()
     {
+        logger.debug("Creating time PAK");
+
         Calendar dateTime = Calendar.getInstance(TimeZone.getDefault());
 
         List<Byte> list = new ArrayList<>();
@@ -73,6 +83,8 @@ public class SegmentManager
     public static NabuPak loadSegments(String pakName, byte[] data)
             throws Exception
     {
+        logger.debug("Loading segment for {}", pakName);
+
         if (data.length > 0xFFFFL)
         {
             throw new Exception("File " + pakName + " is too large");
@@ -117,6 +129,8 @@ public class SegmentManager
     public static NabuPak createSegments(String pakName, byte[] data)
             throws Exception
     {
+        logger.debug("Creating segment for {}", pakName);
+
         if (data.length > 0xFFFFL)
         {
             throw new Exception("File " + pakName + " is too large");
@@ -159,6 +173,9 @@ public class SegmentManager
     private static List<Byte> createSegment(byte segmentNumber, short offset,
             boolean lastSegment, byte[] data)
     {
+        logger.debug("Creating segment for segment number {} at offset {}",
+                segmentNumber, offset);
+
         List<Byte> list = new ArrayList<>();
 
         // Cobble together the header
@@ -226,20 +243,15 @@ public class SegmentManager
         if (segmentData.get(segmentData.size() - 2) != crcData[0]
                 || segmentData.get(segmentData.size() - 1) != crcData[1])
         {
-            System.out.print("CRC Bad, Calculated "
-                    + String.format("0x%02x", ((int) crcData[0] & 0xff)) + ", "
-                    + String.format("0x%02x", ((int) crcData[1] & 0xff)));
-            System.out
-                    .println(" but read "
-                            + String.format("0x%02x",
-                                    ((int) segmentData
-                                            .get(segmentData.size() - 2)
-                                            & 0xff))
-                            + ", "
-                            + String.format("0x%02x",
-                                    ((int) segmentData
-                                            .get(segmentData.size() - 1)
-                                            & 0xff)));
+            logger.warn("CRC Bad, Calculated {}, {} but read {}, {}",
+                    String.format("0x%02x", ((int) crcData[0] & 0xff)),
+                    String.format("0x%02x", ((int) crcData[1] & 0xff)),
+                    String.format("0x%02x",
+                            ((int) segmentData.get(segmentData.size() - 2)
+                                    & 0xff)),
+                    String.format("0x%02x",
+                            ((int) segmentData.get(segmentData.size() - 1)
+                                    & 0xff)));
 
             // Fix the CRC so that the nabu will load.
             segmentData.set(segmentData.size() - 2, crcData[0]);

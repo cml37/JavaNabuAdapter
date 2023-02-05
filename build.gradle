@@ -32,6 +32,8 @@ jar {
 
 dependencies {
     // Use JUnit test framework
-    implementation group: 'com.fazecast', name: 'jSerialComm', version: '2.9.3'
+    implementation 'com.fazecast:jSerialComm:2.9.3'
+    implementation 'org.apache.logging.log4j:log4j-api:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
 }
 
