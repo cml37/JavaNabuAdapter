@@ -2,7 +2,7 @@
 Java version of https://github.com/hupshall/NabuAdaptor
 
 # Building
-Assuming you have Gradle and Java 15 installed, it's as easy as `gradlew jar`
+Assuming you have Gradle and Java 11 installed, it's as easy as `gradlew jar`
 
 # Running
 After building, just run your built JAR, passing in your COM port (or tty port) and URL for your online server, e.g.:
