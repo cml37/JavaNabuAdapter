@@ -153,8 +153,8 @@ public class SegmentManager
             boolean lastSegment = baos.available() == 0;
 
             // Create the segment
-            segments.add(new NabuSegment(segmentNumber, createSegment(
-                    segmentNumber, (short) offset, lastSegment, buffer)));
+            segments.add(new NabuSegment(segmentNumber,
+                    createSegment(segmentNumber, offset, lastSegment, buffer)));
             offset += bytesRead;
         }
 
@@ -170,7 +170,7 @@ public class SegmentManager
      * @param data
      * @return List<Byte>
      */
-    private static List<Byte> createSegment(byte segmentNumber, short offset,
+    private static List<Byte> createSegment(byte segmentNumber, int offset,
             boolean lastSegment, byte[] data)
     {
         logger.debug("Creating segment for segment number {} at offset {}",

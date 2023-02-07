@@ -186,7 +186,7 @@ public class NabuServer
         int segmentNumber = this.getRequestedSegment();
         int pakFileName = this.getRequestedPakFile();
 
-        String pakName = String.format("%06x", pakFileName);
+        String pakName = String.format("%06x", pakFileName).toUpperCase();
         logger.debug("Nabu requesting file {} and segment {}", pakName,
                 String.format("%06x", segmentNumber));
 
