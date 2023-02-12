@@ -1,5 +1,6 @@
 package com.lenderman.nabu.adapter.server;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.net.URL;
 import java.net.URLConnection;
@@ -203,7 +204,7 @@ public class NabuServer
             nabuPak = cache.stream().filter(i -> i.getPakName().equals(pakName))
                     .findFirst();
 
-            if (nabuPak.isEmpty())
+            if (!nabuPak.isPresent())
             {
                 if (settings.getUrl() != null)
                 {
@@ -219,10 +220,12 @@ public class NabuServer
                     }
 
                     URLConnection connection = openWebClient(downloadUrl);
-                    java.io.BufferedInputStream in = new java.io.BufferedInputStream(
+                    byte[] data = new byte[(int) connection
+                            .getContentLengthLong()];
+                    DataInputStream dataInputStream = new DataInputStream(
                             connection.getInputStream());
+                    dataInputStream.readFully(data);
 
-                    byte[] data = in.readAllBytes();
                     nabuPak = Optional
                             .of(SegmentManager.loadSegments(pakName, data));
                     this.cache.add(nabuPak.get());
@@ -254,7 +257,7 @@ public class NabuServer
                     }
                 }
 
-                if (nabuPak.isEmpty())
+                if (!nabuPak.isPresent())
                 {
                     if (pakFileName == 1)
                     {
