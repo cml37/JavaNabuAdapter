@@ -126,6 +126,8 @@ public class NabuServer
                 int b = this.readByte();
                 switch (b)
                 {
+                case 0x8F:
+                    break; // Do nothing, just throw it away
                 case 0x85: // Channel
                     this.writeBytes(0x10, 0x6);
                     int channel = this.readByte() + (this.readByte() << 8);
@@ -165,7 +167,7 @@ public class NabuServer
                     // quit this loop
                     throw new Exception("Socket disconnected");
                 default:
-                    logger.error("Unknown command {}",
+                    logger.error("Unknown command 0x{}",
                             String.format("%02x", b));
                     this.writeBytes(0x10, 0x6);
                     break;
