@@ -1,14 +1,9 @@
 package com.lenderman.nabu.adapter.server;
 
 import java.io.File;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.connection.Connection;
@@ -118,10 +113,12 @@ public class NabuServer
                     throw new Exception("Connection Lost");
                 }
 
-                switch (this.readByte())
+                int b = this.readByte();
+                switch (b)
                 {
                 case 0x8F:
-                    this.writeBytes(0xE4);
+				    // TODO: C# version has this, but it causes breakage
+                    // this.writeBytes(0xE4);
                     break;
                 case 0x85: // Channel
                     this.writeBytes(0x10, 0x6);
@@ -252,35 +249,32 @@ public class NabuServer
                     separator = File.separator;
                 }
 
+                Optional<byte[]> data;
                 // if the path ends with .nabu:
-                byte[] data = null;
-
                 if (this.settings.getPath().toLowerCase().endsWith(".nabu")
                         && segmentNumber == 1)
                 {
-                    Optional<byte[]> bytes = loader
-                            .tryGetData(this.settings.getPath());
-                    if (bytes.isPresent())
+                    data = loader.tryGetData(this.settings.getPath());
+                    if (data.isPresent())
                     {
                         logger.debug("Creating NABU segment {} from {}",
                                 String.format("%06x", segmentNumber),
                                 this.settings.getPath());
                         segment = Optional.of(SegmentManager
-                                .createPackets(segmentName, data));
+                                .createPackets(segmentName, data.get()));
                     }
                 }
                 else if (this.settings.getPath().toLowerCase().endsWith(".pak")
                         && segmentNumber == 1)
                 {
-                    Optional<byte[]> bytes = loader
-                            .tryGetData(this.settings.getPath());
-                    if (bytes.isPresent())
+                    data = loader.tryGetData(this.settings.getPath());
+                    if (data.isPresent())
                     {
                         logger.debug("Loading NABU segment {} from {}",
                                 String.format("%06x", segmentNumber),
                                 this.settings.getPath());
-                        segment = Optional.of(
-                                SegmentManager.loadPackets(segmentName, data));
+                        segment = Optional.of(SegmentManager
+                                .loadPackets(segmentName, data.get()));
                     }
                 }
                 else
@@ -292,15 +286,14 @@ public class NabuServer
                     {
                         String segmentFullPath = directory.get() + separator
                                 + segmentName + ".nabu";
-                        Optional<byte[]> bytes = loader
-                                .tryGetData(segmentFullPath);
-                        if (bytes.isPresent())
+                        data = loader.tryGetData(segmentFullPath);
+                        if (data.isPresent())
                         {
                             logger.debug("Creating NABU segment {} from {}",
                                     String.format("%06x", segmentNumber),
                                     segmentFullPath);
                             segment = Optional.of(SegmentManager
-                                    .createPackets(segmentName, data));
+                                    .createPackets(segmentName, data.get()));
                         }
                         else
                         {
@@ -310,7 +303,7 @@ public class NabuServer
                                     String.format("%06x", segmentNumber),
                                     pakFullPath);
                             segment = Optional.of(SegmentManager
-                                    .loadPackets(segmentName, data));
+                                    .loadPackets(segmentName, data.get()));
                         }
                     }
                 }
@@ -436,7 +429,8 @@ public class NabuServer
     private void configureChannel(boolean askForChannel) throws Exception
     {
         this.writeBytes(0x10, 0x6);
-        this.readByte(0x1);
+		// TODO: C# version empties the buffer, but this should be sufficient?
+        this.readByte();
 
         if (!askForChannel)
         {
