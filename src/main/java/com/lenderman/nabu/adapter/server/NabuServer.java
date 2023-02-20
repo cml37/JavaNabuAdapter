@@ -127,7 +127,9 @@ public class NabuServer
                 switch (b)
                 {
                 case 0x8F:
-                    break; // Do nothing, just throw it away
+                    this.readByte();
+                    this.writeBytes(0xE4);
+                    break;
                 case 0x85: // Channel
                     this.writeBytes(0x10, 0x6);
                     int channel = this.readByte() + (this.readByte() << 8);
