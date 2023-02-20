@@ -5,64 +5,37 @@ import java.util.List;
 public class NabuSegment
 {
     /**
-     * This is the size of a nabu header
+     * List of all the packets in this segment
      */
-    public static final int SegmentHeaderLength = 0x10;
+    private List<NabuPacket> packets;
 
     /**
-     * This is the maximum size of data that can be in a nabu segment
+     * Name of the segment
      */
-    public static final int SegmentDataLength = 0x3E1;
+    private String name;
 
     /**
-     * This is the size of the CRC at the end of the segment
+     * @return List<NabuPacket>
      */
-    public static final int CrcLength = 0x2;
-
-    /**
-     * Segment Sequence Number
-     */
-    private byte sequenceNumber;
-
-    /**
-     * Segment Data
-     */
-    private List<Byte> segmentData;
-
-    /**
-     * The maximum size of a nabu segment, header + data + crc
-     */
-    public static int MaxSegmentSize()
+    public List<NabuPacket> getPackets()
     {
-        return SegmentHeaderLength + SegmentDataLength + CrcLength;
+        return packets;
     }
 
     /**
-     * Gets this segment's sequence number
-     * 
-     * @return byte
+     * @return String
      */
-    public byte getSequenceNumber()
+    public String getName()
     {
-        return sequenceNumber;
-    }
-
-    /**
-     * Gets this segments data (what actually gets sent to the nabu)
-     * 
-     * @return List<Byte>
-     */
-    public List<Byte> getSegmentData()
-    {
-        return segmentData;
+        return name;
     }
 
     /**
      * Constructor
      */
-    public NabuSegment(byte sequenceNumber, List<Byte> segmentData)
+    public NabuSegment(List<NabuPacket> packets, String name)
     {
-        this.sequenceNumber = sequenceNumber;
-        this.segmentData = segmentData;
+        this.packets = packets;
+        this.name = name;
     }
 }

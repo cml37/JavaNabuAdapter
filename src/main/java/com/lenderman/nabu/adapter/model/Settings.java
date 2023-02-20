@@ -7,7 +7,7 @@ public class Settings
      */
     private enum ParseState
     {
-        start, port, mode, path, url
+        start, port, mode, source
     }
 
     /**
@@ -24,9 +24,14 @@ public class Settings
     private boolean askForChannel;
 
     /**
-     * The port used by the nabu
+     * The baud rate used by the nabu
      */
-    private String port;
+    private String baudRate = "111865";
+
+    /**
+     * The serial port used by the nabu
+     */
+    private String serialPort;
 
     /**
      * The NABU connection operating mode
@@ -34,14 +39,14 @@ public class Settings
     private OperatingMode operatingMode;
 
     /**
-     * The directory path to use for cached nabu files
+     * The path to use for cached nabu files
      */
-    private String directory;
+    private String path;
 
     /**
-     * The server URL to use for obtaining cycle data
+     * The TCP/IP port used by the NABU
      */
-    private String url;
+    private String tcpIpPort;
 
     /**
      * @return boolean
@@ -53,10 +58,26 @@ public class Settings
 
     /**
      * @return string
+     * @throws Exception
      */
-    public String getPort()
+    public String getPort() throws Exception
     {
-        return port;
+        switch (this.operatingMode)
+        {
+        case Serial:
+            return this.serialPort;
+        case TCPIP:
+            return this.tcpIpPort;
+        }
+        throw new Exception("Invalid Operating Mode");
+    }
+
+    /**
+     * @return baudRate
+     */
+    public String getBaudRate()
+    {
+        return baudRate;
     }
 
     /**
@@ -70,17 +91,9 @@ public class Settings
     /**
      * @return String
      */
-    public String getDirectory()
+    public String getPath()
     {
-        return directory;
-    }
-
-    /**
-     * @return String
-     */
-    public String getUrl()
-    {
-        return url;
+        return path;
     }
 
     /**
@@ -88,8 +101,8 @@ public class Settings
      */
     public Settings(String[] args)
     {
-        // default the directory to the current location
-        this.directory = "";
+        // default the path to the current location
+        this.path = "";
         this.askForChannel = false;
         ParseState parseState = ParseState.start;
         this.operatingMode = null;
@@ -124,17 +137,20 @@ public class Settings
                     break;
 
                 case port:
-                    this.port = argument;
+                    switch (this.operatingMode)
+                    {
+                    case Serial:
+                        this.serialPort = argument;
+                        break;
+                    case TCPIP:
+                        this.tcpIpPort = argument;
+                        break;
+                    }
                     parseState = ParseState.start;
                     break;
 
-                case path:
-                    this.directory = argument;
-                    parseState = ParseState.start;
-                    break;
-
-                case url:
-                    this.url = argument;
+                case source:
+                    this.path = argument;
                     parseState = ParseState.start;
                     break;
 
@@ -150,11 +166,8 @@ public class Settings
                     case "-askforchannel":
                         this.askForChannel = true;
                         break;
-                    case "-path":
-                        parseState = ParseState.path;
-                        break;
-                    case "-url":
-                        parseState = ParseState.url;
+                    case "-source":
+                        parseState = ParseState.source;
                         break;
                     default:
                         this.DisplayHelp();
@@ -169,7 +182,7 @@ public class Settings
             this.DisplayHelp();
         }
 
-        if (this.operatingMode == null || this.port == null)
+        if (this.operatingMode == null)
         {
             this.DisplayHelp();
         }
@@ -183,7 +196,7 @@ public class Settings
         System.out.println("Nabu console server");
         System.out.println("");
         System.out.println("Parameters:");
-        System.out.println("-mode -port -askforchannel -path -url");
+        System.out.println("-mode -port -askforchannel -source");
         System.out.println();
         System.out.println(
                 "mode options: Serial, TCPIP - listen to serial port or TCPIP port");
@@ -192,9 +205,7 @@ public class Settings
         System.out.println(
                 "askforchannel - Just sets the flag to prompt the nabu for a channel.");
         System.out.println(
-                "path: Local path for files, defaults to current directory");
-        System.out.println(
-                "url: url to cloud location - overrides path parameter if present, example https://www.mydomain.com/paklocation");
+                "source: url or local path for files, defaults to current directory");
         System.out.println();
         System.out.println("Serial Mode example:");
         System.out.println("-Mode Serial -Port COM4");
