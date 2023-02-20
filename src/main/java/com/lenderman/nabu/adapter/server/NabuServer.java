@@ -103,6 +103,17 @@ public class NabuServer
             return;
         }
 
+        // If the path starts with http, go cloud - otherwise local
+        Loader loader;
+        if (this.settings.getPath().toLowerCase().startsWith("http"))
+        {
+            loader = new WebLoader();
+        }
+        else
+        {
+            loader = new LocalLoader();
+        }
+
         while (true)
         {
             try
@@ -115,10 +126,6 @@ public class NabuServer
                 int b = this.readByte();
                 switch (b)
                 {
-                case 0x8F:
-                    // TODO: C# version has this, but it causes breakage
-                    // this.writeBytes(0xE4);
-                    break;
                 case 0x85: // Channel
                     this.writeBytes(0x10, 0x6);
                     int channel = this.readByte() + (this.readByte() << 8);
@@ -126,7 +133,7 @@ public class NabuServer
                     this.writeBytes(0xE4);
                     break;
                 case 0x84: // File Transfer
-                    this.handleFileRequest();
+                    this.handleFileRequest(loader);
                     break;
                 case 0x83:
                     this.writeBytes(0x10, 0x6, 0xE4);
@@ -199,7 +206,7 @@ public class NabuServer
     /**
      * Handle the Nabu's file request
      */
-    private void handleFileRequest() throws Exception
+    private void handleFileRequest(Loader loader) throws Exception
     {
         this.writeBytes(0x10, 0x6);
 
@@ -222,7 +229,7 @@ public class NabuServer
         }
         else
         {
-            if (cache.contains(segmentName))
+            if (cache.containsKey(segmentName))
             {
                 segment = Optional.of(cache.get(segmentName));
             }
@@ -233,18 +240,6 @@ public class NabuServer
 
             if (!segment.isPresent())
             {
-                Loader loader;
-
-                // If the path starts with http, go cloud - otherwise local
-                if (this.settings.getPath().toLowerCase().startsWith("http"))
-                {
-                    loader = new WebLoader();
-                }
-                else
-                {
-                    loader = new LocalLoader();
-                }
-
                 Optional<byte[]> data;
                 // if the path ends with .nabu:
                 if (this.settings.getPath().toLowerCase().endsWith(".nabu")

@@ -67,7 +67,7 @@ public class WebLoader implements Loader
             }
             else
             {
-                directoryPath = path;
+                directoryPath = path.replaceAll("/$", "");
             }
 
             return Optional.of(directoryPath);
