@@ -38,4 +38,12 @@ public class LocalLoader implements Loader
             return Optional.empty();
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getPathSeparator()
+    {
+        return File.separator;
+    }
 }

@@ -1,6 +1,5 @@
 package com.lenderman.nabu.adapter.server;
 
-import java.io.File;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -117,7 +116,7 @@ public class NabuServer
                 switch (b)
                 {
                 case 0x8F:
-				    // TODO: C# version has this, but it causes breakage
+                    // TODO: C# version has this, but it causes breakage
                     // this.writeBytes(0xE4);
                     break;
                 case 0x85: // Channel
@@ -237,16 +236,13 @@ public class NabuServer
                 Loader loader;
 
                 // If the path starts with http, go cloud - otherwise local
-                String separator;
                 if (this.settings.getPath().toLowerCase().startsWith("http"))
                 {
                     loader = new WebLoader();
-                    separator = "/";
                 }
                 else
                 {
                     loader = new LocalLoader();
-                    separator = File.separator;
                 }
 
                 Optional<byte[]> data;
@@ -284,8 +280,9 @@ public class NabuServer
 
                     if (directory.isPresent())
                     {
-                        String segmentFullPath = directory.get() + separator
-                                + segmentName + ".nabu";
+                        String segmentFullPath = directory.get()
+                                + loader.getPathSeparator() + segmentName
+                                + ".nabu";
                         data = loader.tryGetData(segmentFullPath);
                         if (data.isPresent())
                         {
@@ -297,8 +294,9 @@ public class NabuServer
                         }
                         else
                         {
-                            String pakFullPath = directory.get() + separator
-                                    + segmentName + ".pak";
+                            String pakFullPath = directory.get()
+                                    + loader.getPathSeparator() + segmentName
+                                    + ".pak";
                             logger.debug("Loading NABU segment {} from {}",
                                     String.format("%06x", segmentNumber),
                                     pakFullPath);
@@ -429,7 +427,6 @@ public class NabuServer
     private void configureChannel(boolean askForChannel) throws Exception
     {
         this.writeBytes(0x10, 0x6);
-		// TODO: C# version empties the buffer, but this should be sufficient?
         this.readByte();
 
         if (!askForChannel)
