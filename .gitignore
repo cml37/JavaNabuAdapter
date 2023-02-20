@@ -6,6 +6,9 @@ lib
 build
 bin
 
+# Ignore any testing directories
+cycle
+
 # Ignore Eclipse artifacts
 .project
 .settings
