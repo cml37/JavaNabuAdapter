@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.lenderman.nabu.adapter.model.Settings;
 
 public class TcpConnection implements Connection
 {
@@ -17,9 +18,9 @@ public class TcpConnection implements Connection
             .getLogger(TcpConnection.class);
 
     /**
-     * TCP/IP Port
+     * Program settings
      */
-    private int port;
+    private Settings settings;
 
     /**
      * TCP/IP Server Socket
@@ -34,9 +35,9 @@ public class TcpConnection implements Connection
     /**
      * Constructor
      */
-    public TcpConnection(int port)
+    public TcpConnection(Settings settings)
     {
-        this.port = port;
+        this.settings = settings;
     }
 
     /**
@@ -77,7 +78,7 @@ public class TcpConnection implements Connection
     @Override
     public boolean isConnected()
     {
-        return socket.isConnected();
+        return socket != null && socket.isConnected();
     }
 
     /**
@@ -86,7 +87,8 @@ public class TcpConnection implements Connection
     @Override
     public void startServer() throws Exception
     {
-        serverSocket = new ServerSocket(port);
+        serverSocket = new ServerSocket(
+                Integer.parseInt(this.settings.getPort()));
         socket = serverSocket.accept();
     }
 

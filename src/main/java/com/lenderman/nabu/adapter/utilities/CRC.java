@@ -40,7 +40,7 @@ public class CRC
      * Calculate the CRC based on the passed in byte array
      *
      * @param bytes data to calculate the CRC
-     * @return Upper and lower bytes for use with nabu paks
+     * @return Upper and lower bytes for use with nabu packets
      */
     public static byte[] CalculateCRC(List<Byte> bytes)
     {

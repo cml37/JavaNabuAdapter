@@ -1,19 +1,17 @@
 package com.lenderman.nabu.adapter.server;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.connection.Connection;
 import com.lenderman.nabu.adapter.connection.SerialConnection;
 import com.lenderman.nabu.adapter.connection.TcpConnection;
-import com.lenderman.nabu.adapter.model.NabuPak;
+import com.lenderman.nabu.adapter.loader.Loader;
+import com.lenderman.nabu.adapter.loader.LocalLoader;
+import com.lenderman.nabu.adapter.loader.WebLoader;
+import com.lenderman.nabu.adapter.model.NabuPacket;
 import com.lenderman.nabu.adapter.model.NabuSegment;
 import com.lenderman.nabu.adapter.model.Settings;
 
@@ -29,6 +27,14 @@ public class NabuServer
     private static final Logger logger = LogManager.getLogger(NabuServer.class);
 
     /**
+     * Cache of loaded segments
+     * 
+     * If you don't cache this, you'll be loading in the file and parsing
+     * everything for every individual packet.
+     */
+    public static ConcurrentHashMap<String, NabuSegment> cache = new ConcurrentHashMap<String, NabuSegment>();
+
+    /**
      * Nabu connection
      */
     private Connection connection;
@@ -39,24 +45,17 @@ public class NabuServer
     private Settings settings;
 
     /**
-     * Cache of loaded PAK files you don't cache this, you'll be loading in the
-     * file and parsing everything for every individual segment.
-     */
-    private List<NabuPak> cache;
-
-    /**
      * Constructor
      */
     public NabuServer(Settings settings)
     {
         this.settings = settings;
-        this.cache = new ArrayList<NabuPak>();
     }
 
     /**
      * Start the server
      */
-    public void startServer() throws Exception
+    private void startServer() throws Exception
     {
         logger.debug("Begin startServer");
         this.stopServer();
@@ -64,11 +63,10 @@ public class NabuServer
         switch (this.settings.getOperatingMode())
         {
         case Serial:
-            this.connection = new SerialConnection(this.settings.getPort());
+            this.connection = new SerialConnection(this.settings);
             break;
         case TCPIP:
-            this.connection = new TcpConnection(
-                    Integer.parseInt(this.settings.getPort()));
+            this.connection = new TcpConnection(this.settings);
             break;
         }
 
@@ -92,9 +90,7 @@ public class NabuServer
      */
     public void runServer()
     {
-        boolean initialized = false;
-
-        logger.info("Listening for Nabu");
+        logger.info("Listening for NABU");
 
         // Start the server first, but if we hit an exception, terminate
         try
@@ -107,6 +103,17 @@ public class NabuServer
             return;
         }
 
+        // If the path starts with http, go cloud - otherwise local
+        Loader loader;
+        if (this.settings.getPath().toLowerCase().startsWith("http"))
+        {
+            loader = new WebLoader();
+        }
+        else
+        {
+            loader = new LocalLoader();
+        }
+
         while (true)
         {
             try
@@ -116,32 +123,36 @@ public class NabuServer
                     throw new Exception("Connection Lost");
                 }
 
-                switch (this.readByte())
+                int b = this.readByte();
+                switch (b)
                 {
+                case 0x8F:
+                    break; // Do nothing, just throw it away
                 case 0x85: // Channel
                     this.writeBytes(0x10, 0x6);
-                    logger.debug("Received Channel {}", String.format("%08",
-                            this.readByte() + (this.readByte() << 8)));
+                    int channel = this.readByte() + (this.readByte() << 8);
+                    logger.debug("Received Channel {}", channel);
                     this.writeBytes(0xE4);
                     break;
                 case 0x84: // File Transfer
-                    this.handleFileRequest();
+                    this.handleFileRequest(loader);
                     break;
                 case 0x83:
-                    if (!initialized)
-                    {
-                        this.initializeNabu(this.settings.isAskForChannel());
-                    }
-                    else
-                    {
-                        this.writeBytes(0x10, 0x6, 0xE4);
-                    }
+                    this.writeBytes(0x10, 0x6, 0xE4);
                     break;
                 case 0x82:
-                    this.writeBytes(0x10, 0x6);
+                    this.configureChannel(this.settings.isAskForChannel());
                     break;
                 case 0x81:
                     this.writeBytes(0x10, 0x6);
+                    break;
+                case 0x20:
+                    // Send the main menu - Prototype
+                    this.sendMainMenu();
+                    break;
+                case 0x21:
+                    // send specified menu - Prototype
+                    this.sendSubMenu();
                     break;
                 case 0x1E:
                     this.writeBytes(0x10, 0xE1);
@@ -155,12 +166,16 @@ public class NabuServer
                     // Well, we are reading garbage, socket has probably closed,
                     // quit this loop
                     throw new Exception("Socket disconnected");
+                default:
+                    logger.error("Unknown command 0x{}",
+                            String.format("%02x", b));
+                    this.writeBytes(0x10, 0x6);
+                    break;
                 }
             }
             catch (Exception ex)
             {
                 logger.error("Exception in server runloop", ex);
-                initialized = false;
                 this.stopServer();
                 try
                 {
@@ -177,95 +192,125 @@ public class NabuServer
     }
 
     /**
+     * Prototype for headless NabuAdaptor
+     */
+    private void sendSubMenu()
+    {
+    }
+
+    /**
+     * Prototype for headless NabuAdaptor
+     */
+    private void sendMainMenu()
+    {
+    }
+
+    /**
      * Handle the Nabu's file request
      */
-    private void handleFileRequest() throws Exception
+    private void handleFileRequest(Loader loader) throws Exception
     {
         this.writeBytes(0x10, 0x6);
 
         // Ok, get the requested packet and segment info
+        int packetNumber = this.getRequestedPacket();
         int segmentNumber = this.getRequestedSegment();
-        int pakFileName = this.getRequestedPakFile();
 
-        String pakName = String.format("%06x", pakFileName).toUpperCase();
-        logger.debug("Nabu requesting file {} and segment {}", pakName,
-                String.format("%06x", segmentNumber));
+        String segmentName = String.format("%06x", segmentNumber).toUpperCase();
+        logger.debug("NABU requesting segment {} and packet {}",
+                String.format("%06x", segmentNumber),
+                String.format("%06x", packetNumber));
 
         // ok
         this.writeBytes(0xE4);
-        Optional<NabuPak> nabuPak;
+        Optional<NabuSegment> segment;
 
-        if (pakFileName == 0x7FFFFF)
+        if (segmentNumber == 0x7FFFFF)
         {
-            nabuPak = Optional.of(SegmentManager.createTimePak());
+            segment = Optional.of(SegmentManager.createTimeSegment());
         }
         else
         {
-            nabuPak = cache.stream().filter(i -> i.getPakName().equals(pakName))
-                    .findFirst();
-
-            if (!nabuPak.isPresent())
+            if (cache.containsKey(segmentName))
             {
-                if (settings.getUrl() != null)
+                segment = Optional.of(cache.get(segmentName));
+            }
+            else
+            {
+                segment = Optional.empty();
+            }
+
+            if (!segment.isPresent())
+            {
+                Optional<byte[]> data;
+                // if the path ends with .nabu:
+                if (this.settings.getPath().toLowerCase().endsWith(".nabu")
+                        && segmentNumber == 1)
                 {
-                    String downloadUrl = null;
-                    if (!settings.getUrl().endsWith("/"))
+                    data = loader.tryGetData(this.settings.getPath());
+                    if (data.isPresent())
                     {
-                        downloadUrl = settings.getUrl() + "/" + pakName
-                                + ".pak";
+                        logger.debug("Creating NABU segment {} from {}",
+                                String.format("%06x", segmentNumber),
+                                this.settings.getPath());
+                        segment = Optional.of(SegmentManager
+                                .createPackets(segmentName, data.get()));
                     }
-                    else
+                }
+                else if (this.settings.getPath().toLowerCase().endsWith(".pak")
+                        && segmentNumber == 1)
+                {
+                    data = loader.tryGetData(this.settings.getPath());
+                    if (data.isPresent())
                     {
-                        downloadUrl = settings.getUrl() + pakName + ".pak";
+                        logger.debug("Loading NABU segment {} from {}",
+                                String.format("%06x", segmentNumber),
+                                this.settings.getPath());
+                        segment = Optional.of(SegmentManager
+                                .loadPackets(segmentName, data.get()));
                     }
-
-                    URLConnection connection = openWebClient(downloadUrl);
-                    byte[] data = new byte[(int) connection
-                            .getContentLengthLong()];
-                    DataInputStream dataInputStream = new DataInputStream(
-                            connection.getInputStream());
-                    dataInputStream.readFully(data);
-
-                    nabuPak = Optional
-                            .of(SegmentManager.loadSegments(pakName, data));
-                    this.cache.add(nabuPak.get());
                 }
                 else
                 {
-                    File pakFilename = new File(this.settings.getDirectory()
-                            + File.separator + pakName + ".pak");
-                    File nabuFilename = new File(this.settings.getDirectory()
-                            + File.separator + pakName + ".nabu");
+                    Optional<String> directory = loader
+                            .tryGetDirectory(this.settings.getPath());
 
-                    if (pakFilename.exists())
+                    if (directory.isPresent())
                     {
-                        nabuPak = Optional.of(SegmentManager.loadSegments(
-                                pakName,
-                                Files.readAllBytes(pakFilename.toPath())));
-                        this.cache.add(nabuPak.get());
-                    }
-                    else if (nabuFilename.exists())
-                    {
-                        nabuPak = Optional.of(SegmentManager.createSegments(
-                                pakName,
-                                Files.readAllBytes(nabuFilename.toPath())));
-                        this.cache.add(nabuPak.get());
-                    }
-                    else
-                    {
-                        nabuPak = Optional.empty();
+                        String segmentFullPath = directory.get()
+                                + loader.getPathSeparator() + segmentName
+                                + ".nabu";
+                        data = loader.tryGetData(segmentFullPath);
+                        if (data.isPresent())
+                        {
+                            logger.debug("Creating NABU segment {} from {}",
+                                    String.format("%06x", segmentNumber),
+                                    segmentFullPath);
+                            segment = Optional.of(SegmentManager
+                                    .createPackets(segmentName, data.get()));
+                        }
+                        else
+                        {
+                            String pakFullPath = directory.get()
+                                    + loader.getPathSeparator() + segmentName
+                                    + ".pak";
+                            logger.debug("Loading NABU segment {} from {}",
+                                    String.format("%06x", segmentNumber),
+                                    pakFullPath);
+                            segment = Optional.of(SegmentManager
+                                    .loadPackets(segmentName, data.get()));
+                        }
                     }
                 }
 
-                if (!nabuPak.isPresent())
+                if (!segment.isPresent())
                 {
-                    if (pakFileName == 1)
+                    if (segmentNumber == 1)
                     {
-                        // Nabu can't do anything without an initial pack -
+                        // NABU can't do anything without an initial segment -
                         // throw and be done.
-                        logger.error(
-                                "Initial nabu file of {} was not found, fix this",
-                                pakName);
+                        throw new Exception("Initial NABU file of "
+                                + segmentName + " was not found, fix this");
                     }
 
                     // File not found, write unauthorized
@@ -273,12 +318,16 @@ public class NabuServer
                     this.readByte(0x10);
                     this.readByte(0x6);
                 }
+                else
+                {
+                    cache.put(segmentName, segment.get());
+                }
             }
         }
 
         // Send the requested segment of the pack
-        if (nabuPak.isPresent()
-                && segmentNumber <= nabuPak.get().getPakSegments().size())
+        if (segment.isPresent()
+                && packetNumber <= segment.get().getPackets().size())
         {
             this.writeBytes(0x91);
             int b = this.readByte();
@@ -289,7 +338,7 @@ public class NabuServer
             }
 
             this.readByte(0x6);
-            this.sendSegment(nabuPak.get().getPakSegments().get(segmentNumber));
+            this.sendPacket(segment.get().getPackets().get(packetNumber));
             this.writeBytes(0x10, 0xE1);
         }
     }
@@ -306,40 +355,35 @@ public class NabuServer
     }
 
     /**
-     * Get the requested segment
+     * Get the requested packet
      */
-    private int getRequestedSegment() throws Exception
+    private int getRequestedPacket() throws Exception
     {
         return this.readByte();
     }
 
     /**
-     * Send the segment to the nabu
+     * Send the packet to the nabu
      */
-    private void sendSegment(NabuSegment segment) throws Exception
+    private void sendPacket(NabuPacket packet) throws Exception
     {
-        List<Byte> array = segment.getSegmentData();
-        for (byte b : array)
+        List<Byte> array = packet.getEscapedData();
+        for (Byte b : array)
         {
-            // need to escape 0x10
-            if (b == 0x10)
-            {
-                this.connection.getNabuOutputStream().write(0x10);
-            }
             this.connection.getNabuOutputStream().write(b);
         }
     }
 
     /**
-     * Get the requested pak file name
+     * Get the requested segment
      */
-    private int getRequestedPakFile() throws Exception
+    private int getRequestedSegment() throws Exception
     {
         int b1 = this.readByte();
         int b2 = this.readByte();
         int b3 = this.readByte();
-        int packFile = b1 + (b2 << 8) + (b3 << 16);
-        return packFile;
+        int segment = b1 + (b2 << 8) + (b3 << 16);
+        return segment;
     }
 
     /**
@@ -373,43 +417,23 @@ public class NabuServer
     }
 
     /**
-     * Initialize the nabu and prompt for channel if requested
+     * Tell the NABU to present the channel prompt
      * 
-     * @param booleam askForChanel flag for channel prompt
+     * @param boolean askForChannel
      */
-    private void initializeNabu(boolean askForChannel) throws Exception
+    private void configureChannel(boolean askForChannel) throws Exception
     {
-        this.writeBytes(0x10, 0x6, 0xE4);
-        if (this.readByte() == 0x82)
-        {
-            this.writeBytes(0x10, 0x6);
-            this.readByte(0x1);
-            if (!askForChannel)
-            {
-                this.writeBytes(0x1F, 0x10, 0xE1);
-            }
-            else
-            {
-                logger.debug("Asking for channel");
-                this.writeBytes(0x9F, 0x10, 0xE1);
-            }
-        }
-    }
+        this.writeBytes(0x10, 0x6);
+        this.readByte();
 
-    /**
-     * Helper method to open a Web Client
-     * 
-     * @param String url
-     * @return URLConnection
-     */
-    private URLConnection openWebClient(String url) throws Exception
-    {
-        URL myURL = new URL(url);
-        URLConnection webClient = myURL.openConnection();
-        webClient.addRequestProperty("user-agent", "Nabu Network Adapter 1.0");
-        webClient.addRequestProperty("Content-Type",
-                "application/octet-stream");
-        webClient.addRequestProperty("Content-Transfer-Encoding", "binary");
-        return webClient;
+        if (!askForChannel)
+        {
+            this.writeBytes(0x1F, 0x10, 0xE1);
+        }
+        else
+        {
+            logger.debug("Asking for channel");
+            this.writeBytes(0xFF, 0x10, 0xE1);
+        }
     }
 }

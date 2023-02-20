@@ -3,6 +3,7 @@ package com.lenderman.nabu.adapter.connection;
 import java.io.InputStream;
 import java.io.OutputStream;
 import com.fazecast.jSerialComm.SerialPort;
+import com.lenderman.nabu.adapter.model.Settings;
 
 public class SerialConnection implements Connection
 {
@@ -13,9 +14,9 @@ public class SerialConnection implements Connection
     private SerialPort serialPort;
 
     /**
-     * The COM port to use
+     * The Program settings to use
      */
-    private String comPort;
+    private Settings settings;
 
     /**
      * The serial port input stream
@@ -30,9 +31,9 @@ public class SerialConnection implements Connection
     /**
      * Constructor
      */
-    public SerialConnection(String comPort)
+    public SerialConnection(Settings settings)
     {
-        this.comPort = comPort;
+        this.settings = settings;
     }
 
     /**
@@ -59,7 +60,7 @@ public class SerialConnection implements Connection
     @Override
     public boolean isConnected()
     {
-        return serialPort.isOpen();
+        return serialPort != null && serialPort.isOpen();
     }
 
     /**
@@ -68,19 +69,21 @@ public class SerialConnection implements Connection
     @Override
     public void startServer() throws Exception
     {
-        this.serialPort = SerialPort.getCommPort(comPort);
-
-        serialPort.setBaudRate(111865);
+        this.serialPort = SerialPort.getCommPort(settings.getPort());
+        serialPort.setBaudRate(Integer.parseInt(settings.getBaudRate()));
+        serialPort.setNumStopBits(SerialPort.TWO_STOP_BITS);
+        serialPort.setParity(SerialPort.NO_PARITY);
+        serialPort.setNumDataBits(8);
         serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0,
                 0);
         serialPort.setDTR();
         serialPort.setRTS();
-        serialPort.setNumStopBits(SerialPort.TWO_STOP_BITS);
-        serialPort.setFlowControl(SerialPort.FLOW_CONTROL_RTS_ENABLED);
+        serialPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);
 
         if (!serialPort.openPort())
         {
-            throw new Exception("Serial port could not be opened: " + comPort);
+            throw new Exception(
+                    "Serial port could not be opened: " + settings.getPort());
         }
         this.nabuInputStream = serialPort.getInputStream();
         this.nabuOutputStream = serialPort.getOutputStream();

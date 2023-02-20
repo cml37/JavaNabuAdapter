@@ -10,11 +10,11 @@
 	    </File>  
     </Appenders>
     <Loggers>
-        <Logger name="com.lenderman" level="debug" additivity="false">
+        <Logger name="com.lenderman" level="DEBUG" additivity="false">
             <AppenderRef ref="LogToConsole"/>
             <AppenderRef ref="LogToFile"/>
         </Logger>
-        <Root level="error">
+        <Root level="ERROR">
             <AppenderRef ref="LogToConsole"/>
         </Root>
     </Loggers>

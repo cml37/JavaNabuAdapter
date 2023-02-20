@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.lenderman.nabu.adapter.model.NabuPak;
+import com.lenderman.nabu.adapter.model.NabuPacket;
 import com.lenderman.nabu.adapter.model.NabuSegment;
 import com.lenderman.nabu.adapter.utilities.CRC;
 
@@ -24,11 +24,11 @@ public class SegmentManager
     /**
      * Create the time segment that the nabu can parse.
      * 
-     * @return NabuPak
+     * @return NabuSegment
      */
-    public static NabuPak createTimePak()
+    public static NabuSegment createTimeSegment()
     {
-        logger.debug("Creating time PAK");
+        logger.debug("Creating time segment");
 
         Calendar dateTime = Calendar.getInstance(TimeZone.getDefault());
 
@@ -66,34 +66,34 @@ public class SegmentManager
         list.add(crcData[0]);
         list.add(crcData[1]);
 
-        NabuSegment segment = new NabuSegment(byteVal(0x0), list);
-        List<NabuSegment> segmentList = new ArrayList<NabuSegment>();
-        segmentList.add(segment);
+        NabuPacket packet = new NabuPacket(byteVal(0x0), list);
+        List<NabuPacket> packetList = new ArrayList<NabuPacket>();
+        packetList.add(packet);
 
-        return new NabuPak(segmentList, "0x7FFFFF");
+        return new NabuSegment(packetList, "0x7FFFFF");
     }
 
     /**
-     * Load the segments embedded in the PAK file
+     * Load the packets inside of the segment file (original Nabu cycle packet)
      * 
-     * @param pakName Name of the PAK file
+     * @param segmentName Name of the segment file
      * @param data Contents of the file as a byte array
-     * @return NabuPak
+     * @return NabuSegment
      */
-    public static NabuPak loadSegments(String pakName, byte[] data)
+    public static NabuSegment loadPackets(String segmentName, byte[] data)
             throws Exception
     {
-        logger.debug("Loading segment for {}", pakName);
+        logger.debug("Loading segment for {}", segmentName);
 
         if (data.length > 0xFFFFL)
         {
-            throw new Exception("File " + pakName + " is too large");
+            throw new Exception("File " + segmentName + " is too large");
         }
         ByteArrayInputStream baos = new ByteArrayInputStream(data);
-        List<NabuSegment> list = new ArrayList<NabuSegment>();
-        byte segmentNumber = 0;
+        List<NabuPacket> list = new ArrayList<NabuPacket>();
+        byte packetNumber = 0;
 
-        // Ok, read in the PAK file into its constituent segments
+        // Ok, read in the segment file into its constituent packets
         int b = baos.read();
         while (b != -1)
         {
@@ -101,47 +101,47 @@ public class SegmentManager
             int segmentLength = b + (baos.read() << 8);
 
             if (segmentLength > 0
-                    && segmentLength <= NabuSegment.MaxSegmentSize())
+                    && segmentLength <= NabuPacket.MaxPacketSize())
             {
                 // ok, Read this segment
                 byte[] segmentData = new byte[segmentLength];
                 baos.read(segmentData, 0, segmentLength);
 
-                NabuSegment segment = new NabuSegment(segmentNumber,
+                NabuPacket packet = new NabuPacket(packetNumber,
                         convertToByteList(segmentData));
-                validateSegment(segment.getSegmentData());
-                list.add(segment);
-                segmentNumber++;
+                validatePacket(packet.getSegmentData());
+                list.add(packet);
+                packetNumber++;
             }
             b = baos.read();
         }
 
-        return new NabuPak(list, pakName);
+        return new NabuSegment(list, segmentName);
     }
 
     /**
-     * Create segments for a compiled program
+     * Create packet objects for a compiled program
      * 
-     * @param pakName Name of the PAK file
+     * @param segmentName Name of segment file
      * @param data Binary data to make into segments
-     * @return NabuPak
+     * @return NabuSegment
      */
-    public static NabuPak createSegments(String pakName, byte[] data)
+    public static NabuSegment createPackets(String segmentName, byte[] data)
             throws Exception
     {
-        logger.debug("Creating segment for {}", pakName);
+        logger.debug("Creating segment for {}", segmentName);
 
         if (data.length > 0xFFFFL)
         {
-            throw new Exception("File " + pakName + " is too large");
+            throw new Exception("File " + segmentName + " is too large");
         }
         ByteArrayInputStream baos = new ByteArrayInputStream(data);
-        List<NabuSegment> segments = new ArrayList<NabuSegment>();
+        List<NabuPacket> packets = new ArrayList<NabuPacket>();
         byte segmentNumber = 0;
         int offset = 0;
         while (true)
         {
-            byte[] buffer = new byte[NabuSegment.SegmentDataLength];
+            byte[] buffer = new byte[NabuPacket.PacketDataLength];
             int bytesRead = baos.read(buffer, 0, buffer.length);
             if (bytesRead == -1)
             {
@@ -153,28 +153,28 @@ public class SegmentManager
             boolean lastSegment = baos.available() == 0;
 
             // Create the segment
-            segments.add(new NabuSegment(segmentNumber,
-                    createSegment(segmentNumber, offset, lastSegment, buffer)));
+            packets.add(new NabuPacket(segmentNumber,
+                    createPacket(segmentNumber, offset, lastSegment, buffer)));
             offset += bytesRead;
         }
 
-        return new NabuPak(segments, pakName);
+        return new NabuSegment(packets, segmentName);
     }
 
     /**
-     * Create an individual segment
+     * Create an individual packet
      * 
-     * @param segmentNumber Segment number
+     * @param packetNumber Packet number
      * @param offset offset
      * @param lastSegment
      * @param data
      * @return List<Byte>
      */
-    private static List<Byte> createSegment(byte segmentNumber, int offset,
+    private static List<Byte> createPacket(byte packetNumber, int offset,
             boolean lastSegment, byte[] data)
     {
         logger.debug("Creating segment for segment number {} at offset {}",
-                segmentNumber, offset);
+                packetNumber, offset);
 
         List<Byte> list = new ArrayList<>();
 
@@ -182,7 +182,7 @@ public class SegmentManager
         list.add(byteVal(0x0));
         list.add(byteVal(0x0));
         list.add(byteVal(0x1));
-        list.add(segmentNumber);
+        list.add(packetNumber);
 
         // Owner
         list.add(byteVal(0x1));
@@ -208,7 +208,7 @@ public class SegmentManager
         }
 
         list.add(b);
-        list.add(segmentNumber);
+        list.add(packetNumber);
         list.add(byteVal(0x0));
         list.add(byteVal((int) (offset + 0x12 >> 8) & 0xFF));
         list.add(byteVal((int) (offset + 0x12) & 0xFF));
@@ -228,34 +228,34 @@ public class SegmentManager
     }
 
     /**
-     * Validate the segment CRC
+     * Validate the packet CRC
      * 
-     * @param segmentData segment data
+     * @param packetData packet data
      */
-    private static void validateSegment(List<Byte> segmentData)
+    private static void validatePacket(List<Byte> packetData)
     {
-        List<Byte> data = new ArrayList<>(segmentData.size() - 2);
-        data.addAll(segmentData);
-        data.remove(segmentData.size() - 1);
-        data.remove(segmentData.size() - 2);
+        List<Byte> data = new ArrayList<>(packetData.size() - 2);
+        data.addAll(packetData);
+        data.remove(packetData.size() - 1);
+        data.remove(packetData.size() - 2);
         byte[] crcData = CRC.CalculateCRC(data);
 
-        if (segmentData.get(segmentData.size() - 2) != crcData[0]
-                || segmentData.get(segmentData.size() - 1) != crcData[1])
+        if (packetData.get(packetData.size() - 2) != crcData[0]
+                || packetData.get(packetData.size() - 1) != crcData[1])
         {
             logger.warn("CRC Bad, Calculated {}, {} but read {}, {}",
                     String.format("0x%02x", ((int) crcData[0] & 0xff)),
                     String.format("0x%02x", ((int) crcData[1] & 0xff)),
                     String.format("0x%02x",
-                            ((int) segmentData.get(segmentData.size() - 2)
+                            ((int) packetData.get(packetData.size() - 2)
                                     & 0xff)),
                     String.format("0x%02x",
-                            ((int) segmentData.get(segmentData.size() - 1)
+                            ((int) packetData.get(packetData.size() - 1)
                                     & 0xff)));
 
             // Fix the CRC so that the nabu will load.
-            segmentData.set(segmentData.size() - 2, crcData[0]);
-            segmentData.set(segmentData.size() - 1, crcData[1]);
+            packetData.set(packetData.size() - 2, crcData[0]);
+            packetData.set(packetData.size() - 1, crcData[1]);
         }
     }
 
