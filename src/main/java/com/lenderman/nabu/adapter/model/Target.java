@@ -1,4 +1,6 @@
-package com.lenderman.nabu.adapter.loader;
+package com.lenderman.nabu.adapter.model;
+
+import javax.xml.bind.annotation.XmlElement;
 
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
@@ -23,61 +25,64 @@ package com.lenderman.nabu.adapter.loader;
  * SOFTWARE.
  */
 
-import java.io.File;
-import java.nio.file.Files;
-import java.util.Optional;
-import org.apache.commons.io.IOUtils;
-import com.lenderman.nabu.adapter.model.Settings;
-
-public class LocalLoader implements Loader
+public class Target
 {
     /**
-     * {@inheritDoc}
+     * Target Enum
      */
-    @Override
-    public Optional<byte[]> tryGetData(String path) throws Exception
+    public enum TargetEnum
     {
-        if (path.equalsIgnoreCase(Settings.HeadlessBootLoader))
-        {
-            return Optional.of(IOUtils.toByteArray(getClass().getClassLoader()
-                    .getResourceAsStream(Settings.HeadlessBootResource)));
-        }
-
-        try
-        {
-            File file = new File(path);
-            byte[] data = Files.readAllBytes(file.toPath());
-            return Optional.of(data);
-        }
-        catch (Exception ex)
-        {
-            return Optional.empty();
-        }
+        NabuNetwork, Homebrew, Gameroom
     }
 
     /**
-     * {@inheritDoc}
+     * Type of a target cycle
      */
-    @Override
-    public Optional<String> tryGetDirectory(String path) throws Exception
+    @XmlElement(name = "TargetType")
+    private TargetEnum targetType;
+
+    /**
+     * Name of a target cycle
+     */
+    @XmlElement(name = "Name")
+    private String name;
+
+    /**
+     * URL of a target cycle
+     */
+    @XmlElement(name = "Url")
+    private String url;
+
+    /**
+     * @return TargetType
+     */
+    public TargetEnum getTargetType()
     {
-        try
-        {
-            File file = new File(path);
-            return Optional.of(file.getAbsolutePath());
-        }
-        catch (Exception ex)
-        {
-            return Optional.empty();
-        }
+        return targetType;
     }
 
     /**
-     * {@inheritDoc}
+     * @return String
+     */
+    public String getName()
+    {
+        return name;
+    }
+
+    /**
+     * @return String
+     */
+    public String getUrl()
+    {
+        return url;
+    }
+
+    /**
+     * @return String
      */
     @Override
-    public String getPathSeparator()
+    public String toString()
     {
-        return File.separator;
+        return this.name;
     }
 }

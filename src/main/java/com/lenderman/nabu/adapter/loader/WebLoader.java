@@ -1,47 +1,58 @@
 package com.lenderman.nabu.adapter.loader;
 
-import java.io.DataInputStream;
+/*
+ * Copyright(c) 2023 "RetroTech" Chris Lenderman
+ * Copyright(c) 2022 NabuNetwork.com
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import java.net.URI;
-import java.net.URL;
 import java.net.URLConnection;
 import java.util.Optional;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import com.lenderman.nabu.adapter.utilities.WebUtils;
 
 public class WebLoader implements Loader
 {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Optional<byte[]> tryGetData(String path) throws Exception
     {
-        URLConnection connection = openWebClient(path);
-        byte[] data = new byte[(int) connection.getContentLengthLong()];
-        DataInputStream dataInputStream = new DataInputStream(
-                connection.getInputStream());
-        dataInputStream.readFully(data);
-
-        return (Optional.of(data));
-    }
-
-    /**
-     * Helper method to open a Web Client
-     * 
-     * @param String url
-     * @return URLConnection
-     */
-    private URLConnection openWebClient(String url) throws Exception
-    {
-        URL myURL = new URL(url);
-        URLConnection webClient = myURL.openConnection();
-        webClient.addRequestProperty("user-agent", "Nabu Network Adapter 1.0");
-        webClient.addRequestProperty("Content-Type",
-                "application/octet-stream");
-        webClient.addRequestProperty("Content-Transfer-Encoding", "binary");
-        return webClient;
+        URLConnection connection = WebUtils.openWebClient(path);
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] bytes = new byte[8192];
+        int len;
+        while ((len = connection.getInputStream().read(bytes)) > 0)
+        {
+            buffer.write(bytes, 0, len);
+        }
+        buffer.close();
+        return (Optional.of(buffer.toByteArray()));
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public Optional<String> tryGetDirectory(String path) throws Exception
     {
         String directoryPath = "";
@@ -53,14 +64,15 @@ public class WebLoader implements Loader
             {
                 URI uri = new URI(path);
 
-                directoryPath = String.format("%s://%s", uri.getScheme(),
-                        uri.getAuthority());
+                directoryPath = String
+                        .format("%s://%s", uri.getScheme(), uri.getAuthority())
+                        .replaceAll("/$", "");
 
                 String[] segments = uri.getPath().split("/");
 
                 for (int i = 0; i < segments.length - 1; i++)
                 {
-                    directoryPath += segments[i];
+                    directoryPath += getPathSeparator() + segments[i];
                 }
 
                 directoryPath = directoryPath.replaceAll("/$", "");
@@ -71,7 +83,6 @@ public class WebLoader implements Loader
             }
 
             return Optional.of(directoryPath);
-
         }
         catch (Exception ex)
         {
@@ -82,6 +93,7 @@ public class WebLoader implements Loader
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getPathSeparator()
     {
         return "/";

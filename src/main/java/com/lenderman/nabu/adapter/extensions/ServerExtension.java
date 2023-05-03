@@ -1,4 +1,4 @@
-package com.lenderman.nabu.adapter.loader;
+package com.lenderman.nabu.adapter.extensions;
 
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
@@ -23,30 +23,24 @@ package com.lenderman.nabu.adapter.loader;
  * SOFTWARE.
  */
 
-import java.util.Optional;
-
-public interface Loader
+/**
+ * interface to define the nabu file loader
+ */
+public interface ServerExtension
 {
     /**
-     * Try to get the data
+     * Try to process the command with the specified OP code
      * 
-     * @param String path
-     * @return Optional<byte[]>
+     * @param opCode OP code from the NABU
+     * @return true/false - if the opcode was serviced (Executed upon) in this
+     *         extension
      */
-    public Optional<byte[]> tryGetData(String path) throws Exception;
+    boolean tryProcessCommand(int opCode) throws Exception;
 
     /**
-     * Try to get the containing directory of the specified file
+     * Reset this extension - some extensions may have internal state that needs
+     * to be wiped on cycle changes.
      * 
-     * @param String path
-     * @return Optional<String>
      */
-    public Optional<String> tryGetDirectory(String path) throws Exception;
-
-    /**
-     * Return the path separator assocated with this loader
-     * 
-     * @return String
-     */
-    public String getPathSeparator();
+    void reset();
 }
