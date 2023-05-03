@@ -1,5 +1,6 @@
 package com.lenderman.nabu.adapter.server;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,10 +9,11 @@ import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.connection.Connection;
 import com.lenderman.nabu.adapter.connection.SerialConnection;
 import com.lenderman.nabu.adapter.connection.TcpConnection;
+import com.lenderman.nabu.adapter.extensions.HeadlessExtension;
+import com.lenderman.nabu.adapter.extensions.ServerExtension;
 import com.lenderman.nabu.adapter.loader.Loader;
 import com.lenderman.nabu.adapter.loader.LocalLoader;
 import com.lenderman.nabu.adapter.loader.WebLoader;
-import com.lenderman.nabu.adapter.model.NabuPacket;
 import com.lenderman.nabu.adapter.model.NabuSegment;
 import com.lenderman.nabu.adapter.model.Settings;
 
@@ -27,22 +29,32 @@ public class NabuServer
     private static final Logger logger = LogManager.getLogger(NabuServer.class);
 
     /**
+     * Server settings
+     */
+    private Settings settings;
+
+    /**
      * Cache of loaded segments
      * 
      * If you don't cache this, you'll be loading in the file and parsing
      * everything for every individual packet.
      */
-    public static ConcurrentHashMap<String, NabuSegment> cache = new ConcurrentHashMap<String, NabuSegment>();
+    private ConcurrentHashMap<Integer, NabuSegment> cache = new ConcurrentHashMap<Integer, NabuSegment>();
 
     /**
-     * Nabu connection
+     * Modules to handle non-standard NABU op-codes.
      */
-    private Connection connection;
+    private List<ServerExtension> extensions;
 
     /**
-     * Server settings
+     * Cycle Count.
      */
-    private Settings settings;
+    private int cycleCount;
+
+    /**
+     * Server input/output holder.
+     */
+    private ServerInputOutputController sioc;
 
     /**
      * Constructor
@@ -58,19 +70,24 @@ public class NabuServer
     private void startServer() throws Exception
     {
         logger.debug("Begin startServer");
-        this.stopServer();
+        Connection connection = null;
 
         switch (this.settings.getOperatingMode())
         {
         case Serial:
-            this.connection = new SerialConnection(this.settings);
+            connection = new SerialConnection(this.settings);
             break;
         case TCPIP:
-            this.connection = new TcpConnection(this.settings);
+            connection = new TcpConnection(this.settings);
             break;
         }
 
-        this.connection.startServer();
+        sioc = new ServerInputOutputController(connection);
+
+        this.extensions = new ArrayList<ServerExtension>();
+        // TODO this.extensions.add(new FileStoreExtensions(this, connection));
+        this.extensions.add(new HeadlessExtension(this, sioc, settings));
+        // TODO this.extensions.add(new NHACPExtension(this));
     }
 
     /**
@@ -78,10 +95,10 @@ public class NabuServer
      */
     public void stopServer()
     {
-        logger.debug("Stopping server if running");
-        if (this.connection != null && this.connection.isConnected())
+        if (sioc != null)
         {
-            this.connection.stopServer();
+            logger.debug("Stopping server if running");
+            sioc.closeServerConnections();
         }
     }
 
@@ -103,64 +120,43 @@ public class NabuServer
             return;
         }
 
-        // If the path starts with http, go cloud - otherwise local
-        Loader loader;
-        if (this.settings.getPath().toLowerCase().startsWith("http"))
-        {
-            loader = new WebLoader();
-        }
-        else
-        {
-            loader = new LocalLoader();
-        }
-
         while (true)
         {
             try
             {
-                if (!this.connection.isConnected())
+                if (!sioc.isConnected())
                 {
                     throw new Exception("Connection Lost");
                 }
-
-                int b = this.readByte();
+                int b = sioc.readByte();
                 switch (b)
                 {
-                case 0x8F:
-                    this.readByte();
-                    this.writeBytes(0xE4);
-                    break;
                 case 0x85: // Channel
-                    this.writeBytes(0x10, 0x6);
-                    int channel = this.readByte() + (this.readByte() << 8);
+                    sioc.writeBytes(0x10, 0x6);
+                    int channel = sioc.readByte() + (sioc.readByte() << 8);
                     logger.debug("Received Channel {}", channel);
-                    this.writeBytes(0xE4);
+                    sioc.writeBytes(0xE4);
                     break;
                 case 0x84: // File Transfer
-                    this.handleFileRequest(loader);
+                    this.handleFileRequest();
                     break;
                 case 0x83:
-                    this.writeBytes(0x10, 0x6, 0xE4);
+                    sioc.writeBytes(0x10, 0x6, 0xE4);
                     break;
                 case 0x82:
                     this.configureChannel(this.settings.isAskForChannel());
                     break;
                 case 0x81:
-                    this.writeBytes(0x10, 0x6);
-                    break;
-                case 0x20:
-                    // Send the main menu - Prototype
-                    this.sendMainMenu();
-                    break;
-                case 0x21:
-                    // send specified menu - Prototype
-                    this.sendSubMenu();
+                    sioc.writeBytes(0x10, 0x6);
+                    sioc.readByte();
+                    sioc.readByte();
+                    sioc.writeBytes(0xE4);
                     break;
                 case 0x1E:
-                    this.writeBytes(0x10, 0xE1);
+                    sioc.writeBytes(0x10, 0xE1);
                     break;
                 case 0x5:
-                    this.writeBytes(0xE4);
+                    sioc.writeBytes(0xE4);
                     break;
                 case 0xF:
                     break;
@@ -169,10 +165,23 @@ public class NabuServer
                     // quit this loop
                     throw new Exception("Socket disconnected");
                 default:
-                    logger.error("Unknown command 0x{}",
-                            String.format("%02x", b));
-                    this.writeBytes(0x10, 0x6);
-                    break;
+                    boolean completed = false;
+
+                    for (ServerExtension extension : this.extensions)
+                    {
+                        if (extension.tryProcessCommand(b))
+                        {
+                            completed = true;
+                            break;
+                        }
+                    }
+
+                    if (!completed)
+                    {
+                        logger.error("Unknown command 0x{}",
+                                String.format("%02x", b));
+                        sioc.writeBytes(0x10, 0x6);
+                    }
                 }
             }
             catch (Exception ex)
@@ -194,29 +203,38 @@ public class NabuServer
     }
 
     /**
-     * Prototype for headless NabuAdaptor
+     * @return String current working directory
      */
-    private void sendSubMenu()
+    public String getWorkingDirectory() throws Exception
     {
-    }
+        Loader loader;
+        String directory = "";
 
-    /**
-     * Prototype for headless NabuAdaptor
-     */
-    private void sendMainMenu()
-    {
+        // If the path starts with http, go cloud - otherwise local
+        if (settings.getPath().toLowerCase().startsWith("http"))
+        {
+            loader = new WebLoader();
+        }
+        else
+        {
+            loader = new LocalLoader();
+        }
+
+        loader.tryGetDirectory(this.settings.getPath());
+
+        return directory;
     }
 
     /**
      * Handle the Nabu's file request
      */
-    private void handleFileRequest(Loader loader) throws Exception
+    private void handleFileRequest() throws Exception
     {
-        this.writeBytes(0x10, 0x6);
+        sioc.writeBytes(0x10, 0x6);
 
         // Ok, get the requested packet and segment info
-        int packetNumber = this.getRequestedPacket();
-        int segmentNumber = this.getRequestedSegment();
+        int packetNumber = sioc.getRequestedPacket();
+        int segmentNumber = sioc.getRequestedSegment();
 
         String segmentName = String.format("%06x", segmentNumber).toUpperCase();
         logger.debug("NABU requesting segment {} and packet {}",
@@ -224,8 +242,38 @@ public class NabuServer
                 String.format("%06x", packetNumber));
 
         // ok
-        this.writeBytes(0xE4);
+        sioc.writeBytes(0xE4);
         Optional<NabuSegment> segment;
+
+        if (segmentNumber == 0x1 && packetNumber == 0x0)
+        {
+            extensions.forEach(ServerExtension::reset);
+
+            if (settings
+                    .getSourceLocation() == Settings.SourceLocation.Headless)
+            {
+                // We are headless, and a cycle, need two loads of segment &
+                // packet in a row to reset
+                this.cycleCount++;
+                if (this.cycleCount > 1)
+                {
+                    this.resetHeadless();
+                }
+            }
+
+            if (settings
+                    .getSourceLocation() == Settings.SourceLocation.LocalDirectory)
+            {
+                cache.clear();
+            }
+        }
+
+        if (segmentNumber != 0x1 && segmentNumber != 0x2 && segmentNumber != 0x3
+                && segmentNumber != 0x7FFFFF && settings
+                        .getSourceLocation() == Settings.SourceLocation.Headless)
+        {
+            this.cycleCount = 0;
+        }
 
         if (segmentNumber == 0x7FFFFF)
         {
@@ -233,9 +281,21 @@ public class NabuServer
         }
         else
         {
-            if (cache.containsKey(segmentName))
+            Loader loader;
+
+            // If the path starts with http, go cloud - otherwise local
+            if (settings.getPath().toLowerCase().startsWith("http"))
             {
-                segment = Optional.of(cache.get(segmentName));
+                loader = new WebLoader();
+            }
+            else
+            {
+                loader = new LocalLoader();
+            }
+
+            if (cache.containsKey(segmentNumber))
+            {
+                segment = Optional.of(cache.get(segmentNumber));
             }
             else
             {
@@ -252,11 +312,11 @@ public class NabuServer
                     data = loader.tryGetData(this.settings.getPath());
                     if (data.isPresent())
                     {
-                        logger.debug("Creating NABU segment {} from {}",
+                        logger.debug("Loading NABU segment {} from {}",
                                 String.format("%06x", segmentNumber),
                                 this.settings.getPath());
                         segment = Optional.of(SegmentManager
-                                .createPackets(segmentName, data.get()));
+                                .createPackets(segmentNumber, data.get()));
                     }
                 }
                 else if (this.settings.getPath().toLowerCase().endsWith(".pak")
@@ -265,11 +325,11 @@ public class NabuServer
                     data = loader.tryGetData(this.settings.getPath());
                     if (data.isPresent())
                     {
-                        logger.debug("Loading NABU segment {} from {}",
+                        logger.debug("Creating NABU segment {} from {}",
                                 String.format("%06x", segmentNumber),
                                 this.settings.getPath());
                         segment = Optional.of(SegmentManager
-                                .loadPackets(segmentName, data.get()));
+                                .loadPackets(segmentNumber, data.get()));
                     }
                 }
                 else
@@ -289,7 +349,7 @@ public class NabuServer
                                     String.format("%06x", segmentNumber),
                                     segmentFullPath);
                             segment = Optional.of(SegmentManager
-                                    .createPackets(segmentName, data.get()));
+                                    .createPackets(segmentNumber, data.get()));
                         }
                         else
                         {
@@ -300,29 +360,48 @@ public class NabuServer
                                     String.format("%06x", segmentNumber),
                                     pakFullPath);
                             segment = Optional.of(SegmentManager
-                                    .loadPackets(segmentName, data.get()));
+                                    .loadPackets(segmentNumber, data.get()));
                         }
                     }
                 }
 
                 if (!segment.isPresent())
                 {
-                    if (segmentNumber == 1)
+                    if (settings
+                            .getSourceLocation() == Settings.SourceLocation.Headless)
                     {
-                        // NABU can't do anything without an initial segment -
-                        // throw and be done.
-                        throw new Exception("Initial NABU file of "
-                                + segmentName + " was not found, fix this");
-                    }
+                        logger.warn(
+                                "Could not load requested headless target, reloading menu");
 
-                    // File not found, write unauthorized
-                    this.writeBytes(0x90);
-                    this.readByte(0x10);
-                    this.readByte(0x6);
+                        loader = new LocalLoader();
+                        data = loader.tryGetData(Settings.HeadlessBootLoader);
+                        if (data.isPresent())
+                        {
+                            segment = Optional.of(SegmentManager
+                                    .createPackets(segmentNumber, data.get()));
+                        }
+
+                        cache.put(segmentNumber, segment.get());
+                    }
+                    else
+                    {
+                        if (segmentNumber == 1)
+                        {
+                            // NABU can't do anything without an initial pack -
+                            // throw and be done.
+                            throw new Exception("Initial NABU file of "
+                                    + segmentName + " was not found, fix this");
+                        }
+
+                        // File not found, write unauthorized
+                        sioc.writeBytes(0x90);
+                        sioc.readByte(0x10);
+                        sioc.readByte(0x6);
+                    }
                 }
                 else
                 {
-                    cache.put(segmentName, segment.get());
+                    cache.put(segmentNumber, segment.get());
                 }
             }
         }
@@ -331,91 +410,31 @@ public class NabuServer
         if (segment.isPresent()
                 && packetNumber <= segment.get().getPackets().size())
         {
-            this.writeBytes(0x91);
-            int b = this.readByte();
+            sioc.writeBytes(0x91);
+            int b = sioc.readByte();
             if (b != 0x10)
             {
-                this.writeBytes(0x10, 0x6, 0xE4);
+                sioc.writeBytes(0x10, 0x6, 0xE4);
                 return;
             }
 
-            this.readByte(0x6);
-            this.sendPacket(segment.get().getPackets().get(packetNumber));
-            this.writeBytes(0x10, 0xE1);
+            sioc.readByte(0x6);
+            sioc.sendPacket(segment.get().getPackets().get(packetNumber));
+            sioc.writeBytes(0x10, 0xE1);
         }
     }
 
     /**
-     * Write the byte array to the stream
+     * Reset the server cycle
      */
-    private void writeBytes(Integer... theByte) throws Exception
+    public void resetCycle(String path)
     {
-        for (Integer i : theByte)
-        {
-            this.connection.getNabuOutputStream().write(i.byteValue());
-        }
-    }
+        // reset the cache
+        this.cache.clear();
+        this.cycleCount = 0;
 
-    /**
-     * Get the requested packet
-     */
-    private int getRequestedPacket() throws Exception
-    {
-        return this.readByte();
-    }
-
-    /**
-     * Send the packet to the nabu
-     */
-    private void sendPacket(NabuPacket packet) throws Exception
-    {
-        List<Byte> array = packet.getEscapedData();
-        for (Byte b : array)
-        {
-            this.connection.getNabuOutputStream().write(b);
-        }
-    }
-
-    /**
-     * Get the requested segment
-     */
-    private int getRequestedSegment() throws Exception
-    {
-        int b1 = this.readByte();
-        int b2 = this.readByte();
-        int b3 = this.readByte();
-        int segment = b1 + (b2 << 8) + (b3 << 16);
-        return segment;
-    }
-
-    /**
-     * Read Byte - but throw if the byte we read is not what we expect (passed
-     * in)
-     * 
-     * @param expetedByte This is the value we expect to read
-     * @return The read byte, or throw
-     */
-    private int readByte(int expectedByte) throws Exception
-    {
-        int num = this.readByte();
-
-        if (num != expectedByte)
-        {
-            throw new Exception("Read " + String.format("%02x", num)
-                    + " but expected " + String.format("%02x", expectedByte));
-        }
-
-        return num;
-    }
-
-    /**
-     * Read a single byte from the stream
-     * 
-     * @return read byte
-     */
-    private int readByte() throws Exception
-    {
-        return this.connection.getNabuInputStream().read();
+        // set the path
+        settings.setPath(path);
     }
 
     /**
@@ -425,17 +444,25 @@ public class NabuServer
      */
     private void configureChannel(boolean askForChannel) throws Exception
     {
-        this.writeBytes(0x10, 0x6);
-        this.readByte();
+        sioc.writeBytes(0x10, 0x6);
+        sioc.readByte();
 
         if (!askForChannel)
         {
-            this.writeBytes(0x1F, 0x10, 0xE1);
+            sioc.writeBytes(0x1F, 0x10, 0xE1);
         }
         else
         {
             logger.debug("Asking for channel");
-            this.writeBytes(0xFF, 0x10, 0xE1);
+            sioc.writeBytes(0xFF, 0x10, 0xE1);
         }
+    }
+
+    /**
+     * Reset the server to headless mode
+     */
+    private void resetHeadless()
+    {
+        resetCycle(Settings.HeadlessBootLoader);
     }
 }

@@ -1,4 +1,4 @@
-package com.lenderman.nabu.adapter.loader;
+package com.lenderman.nabu.adapter.model;
 
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
@@ -23,30 +23,29 @@ package com.lenderman.nabu.adapter.loader;
  * SOFTWARE.
  */
 
-import java.util.Optional;
+import java.util.List;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
-public interface Loader
+@XmlRootElement(name = "ArrayOfTarget")
+public class Targets
 {
     /**
-     * Try to get the data
-     * 
-     * @param String path
-     * @return Optional<byte[]>
+     * List of Targets
      */
-    public Optional<byte[]> tryGetData(String path) throws Exception;
+    private List<Target> targets;
 
     /**
-     * Try to get the containing directory of the specified file
-     * 
-     * @param String path
-     * @return Optional<String>
+     * @return List<Target>
      */
-    public Optional<String> tryGetDirectory(String path) throws Exception;
+    @XmlElement(name = "Target")
+    public List<Target> getTargets()
+    {
+        return targets;
+    }
 
-    /**
-     * Return the path separator assocated with this loader
-     * 
-     * @return String
-     */
-    public String getPathSeparator();
+    public void setTargets(List<Target> targets)
+    {
+        this.targets = targets;
+    }
 }

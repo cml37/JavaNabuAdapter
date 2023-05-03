@@ -1,4 +1,7 @@
-package com.lenderman.nabu.adapter.loader;
+package com.lenderman.nabu.adapter.utilities;
+
+import java.net.URL;
+import java.net.URLConnection;
 
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
@@ -23,30 +26,23 @@ package com.lenderman.nabu.adapter.loader;
  * SOFTWARE.
  */
 
-import java.util.Optional;
-
-public interface Loader
+public class WebUtils
 {
     /**
-     * Try to get the data
+     * Helper method to open a Web Client
      * 
-     * @param String path
-     * @return Optional<byte[]>
+     * @param String url
+     * @return URLConnection
      */
-    public Optional<byte[]> tryGetData(String path) throws Exception;
+    public static URLConnection openWebClient(String url) throws Exception
+    {
+        URL myURL = new URL(url);
+        URLConnection webClient = myURL.openConnection();
+        webClient.addRequestProperty("user-agent", "JavaNabuAdapter");
+        webClient.addRequestProperty("Content-Type",
+                "application/octet-stream");
+        webClient.addRequestProperty("Content-Transfer-Encoding", "binary");
+        return webClient;
+    }
 
-    /**
-     * Try to get the containing directory of the specified file
-     * 
-     * @param String path
-     * @return Optional<String>
-     */
-    public Optional<String> tryGetDirectory(String path) throws Exception;
-
-    /**
-     * Return the path separator assocated with this loader
-     * 
-     * @return String
-     */
-    public String getPathSeparator();
 }

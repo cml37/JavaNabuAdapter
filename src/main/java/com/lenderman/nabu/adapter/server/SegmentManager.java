@@ -1,5 +1,28 @@
 package com.lenderman.nabu.adapter.server;
 
+/*
+ * Copyright(c) 2023 "RetroTech" Chris Lenderman
+ * Copyright(c) 2022 NabuNetwork.com
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -70,24 +93,24 @@ public class SegmentManager
         List<NabuPacket> packetList = new ArrayList<NabuPacket>();
         packetList.add(packet);
 
-        return new NabuSegment(packetList, "0x7FFFFF");
+        return new NabuSegment(packetList, 0x7FFFFF);
     }
 
     /**
      * Load the packets inside of the segment file (original Nabu cycle packet)
      * 
-     * @param segmentName Name of the segment file
+     * @param segmentNumber Name of the segment file
      * @param data Contents of the file as a byte array
      * @return NabuSegment
      */
-    public static NabuSegment loadPackets(String segmentName, byte[] data)
+    public static NabuSegment loadPackets(int segmentNumber, byte[] data)
             throws Exception
     {
-        logger.debug("Loading segment for {}", segmentName);
+        logger.debug("Loading segment for {}", segmentNumber);
 
         if (data.length > 0xFFFFL)
         {
-            throw new Exception("File " + segmentName + " is too large");
+            throw new Exception("File " + segmentNumber + " is too large");
         }
         ByteArrayInputStream baos = new ByteArrayInputStream(data);
         List<NabuPacket> list = new ArrayList<NabuPacket>();
@@ -116,28 +139,28 @@ public class SegmentManager
             b = baos.read();
         }
 
-        return new NabuSegment(list, segmentName);
+        return new NabuSegment(list, segmentNumber);
     }
 
     /**
      * Create packet objects for a compiled program
      * 
-     * @param segmentName Name of segment file
+     * @param segmentNumber Name of segment file
      * @param data Binary data to make into segments
      * @return NabuSegment
      */
-    public static NabuSegment createPackets(String segmentName, byte[] data)
+    public static NabuSegment createPackets(int segmentNumber, byte[] data)
             throws Exception
     {
-        logger.debug("Creating segment for {}", segmentName);
+        logger.debug("Creating segment for {}", segmentNumber);
 
         if (data.length > 0xFFFFL)
         {
-            throw new Exception("File " + segmentName + " is too large");
+            throw new Exception("File " + segmentNumber + " is too large");
         }
         ByteArrayInputStream baos = new ByteArrayInputStream(data);
         List<NabuPacket> packets = new ArrayList<NabuPacket>();
-        byte segmentNumber = 0;
+        byte packetNumber = 0;
         int offset = 0;
         while (true)
         {
@@ -153,35 +176,37 @@ public class SegmentManager
             boolean lastSegment = baos.available() == 0;
 
             // Create the segment
-            packets.add(new NabuPacket(segmentNumber,
-                    createPacket(segmentNumber, offset, lastSegment, buffer)));
+            packets.add(new NabuPacket(packetNumber, createPacket(segmentNumber,
+                    packetNumber, offset, lastSegment, buffer, bytesRead)));
             offset += bytesRead;
         }
 
-        return new NabuSegment(packets, segmentName);
+        return new NabuSegment(packets, segmentNumber);
     }
 
     /**
      * Create an individual packet
      * 
+     * @param segmentNumber Segment number
      * @param packetNumber Packet number
      * @param offset offset
      * @param lastSegment
      * @param data
+     * @param bytesRead
      * @return List<Byte>
      */
-    private static List<Byte> createPacket(byte packetNumber, int offset,
-            boolean lastSegment, byte[] data)
+    private static List<Byte> createPacket(int segmentNumber, byte packetNumber,
+            int offset, boolean lastSegment, byte[] data, int bytesRead)
     {
         logger.debug("Creating segment for segment number {} at offset {}",
-                packetNumber, offset);
+                segmentNumber, offset);
 
         List<Byte> list = new ArrayList<>();
 
         // Cobble together the header
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x1));
+        list.add(byteVal((int) (segmentNumber >> 16) & 0xFF));
+        list.add(byteVal((int) (segmentNumber >> 8) & 0xFF));
+        list.add(byteVal((int) (segmentNumber & 0xFF)));
         list.add(packetNumber);
 
         // Owner
@@ -193,30 +218,32 @@ public class SegmentManager
         list.add(byteVal(0xFF));
         list.add(byteVal(0xFF));
 
+        // Mystery bytes
         list.add(byteVal(0x7F));
         list.add(byteVal(0x80));
 
-        // type
-        byte b = 0x20;
-        if (offset < 0x80)
-        {
-            b = (byte) (b | 0x81);
-        }
+        // Packet Type
+        byte type = 0x20;
         if (lastSegment)
         {
-            b = (byte) (b | 0x10);
+            // Set the 4th bit to mark end of segment
+            type = (byte) (type | 0x10);
+        }
+        else if (packetNumber == 0)
+        {
+            type = byteVal(0xa1);
         }
 
-        list.add(b);
+        list.add(type);
         list.add(packetNumber);
         list.add(byteVal(0x0));
-        list.add(byteVal((int) (offset + 0x12 >> 8) & 0xFF));
-        list.add(byteVal((int) (offset + 0x12) & 0xFF));
+        list.add(byteVal((int) (offset >> 8) & 0xFF));
+        list.add(byteVal((int) (offset & 0xFF)));
 
         // Payload
-        for (byte value : data)
+        for (int index = 0; index < bytesRead; index++)
         {
-            list.add(value);
+            list.add(data[index]);
         }
 
         // CRC
