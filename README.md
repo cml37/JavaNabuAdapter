@@ -2,9 +2,8 @@
 Java version of https://github.com/nabunetwork/Adaptor
 
 # Deficiencies 
-* Needs some serious testing, epecially for local headless mode
-* Does not have support for FileStoreExtensions
-* Does not have support for NHACPExtension
+* Needs some serious testing, especially for RetroNet File Store Extension mode
+* NHACP Extension could use additional testing
 
 # Building
 Assuming you have Gradle and Java 8 or higher installed, it's as easy as `gradlew jar`

@@ -8,6 +8,7 @@ bin
 
 # Ignore any testing directories
 cycle
+cpm 
 
 # Ignore Eclipse artifacts
 .project

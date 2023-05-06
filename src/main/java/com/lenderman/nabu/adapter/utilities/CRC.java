@@ -28,9 +28,9 @@ import java.util.List;
 public class CRC
 {
     /**
-     * CRC calculation support table
+     * Cycle CRC calculation support table
      */
-    private static final int[] table =
+    private static final int[] cycleCrcTable =
     { 0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032, 37161, 41290,
             45419, 49548, 53677, 57806, 61935, 4657, 528, 12915, 8786, 21173,
             17044, 29431, 25302, 37689, 33560, 45947, 41818, 54205, 50076,
@@ -60,12 +60,35 @@ public class CRC
             16050, 3793, 7920 };
 
     /**
-     * Calculate the CRC based on the passed in byte array
+     * NHACP CRC calculation support table
+     */
+    private static int[] nhacpCrcTable = new int[]
+    { 0, 155, 173, 54, 193, 90, 108, 247, 25, 130, 180, 47, 216, 67, 117, 238,
+            50, 169, 159, 4, 243, 104, 94, 197, 43, 176, 134, 29, 234, 113, 71,
+            220, 100, 255, 201, 82, 165, 62, 8, 147, 125, 230, 208, 75, 188, 39,
+            17, 138, 86, 205, 251, 96, 151, 12, 58, 161, 79, 212, 226, 121, 142,
+            21, 35, 184, 200, 83, 101, 254, 9, 146, 164, 63, 209, 74, 124, 231,
+            16, 139, 189, 38, 250, 97, 87, 204, 59, 160, 150, 13, 227, 120, 78,
+            213, 34, 185, 143, 20, 172, 55, 1, 154, 109, 246, 192, 91, 181, 46,
+            24, 131, 116, 239, 217, 66, 158, 5, 51, 168, 95, 196, 242, 105, 135,
+            28, 42, 177, 70, 221, 235, 112, 11, 144, 166, 61, 202, 81, 103, 252,
+            18, 137, 191, 36, 211, 72, 126, 229, 57, 162, 148, 15, 248, 99, 85,
+            206, 32, 187, 141, 22, 225, 122, 76, 215, 111, 244, 194, 89, 174,
+            53, 3, 152, 118, 237, 219, 64, 183, 44, 26, 129, 93, 198, 240, 107,
+            156, 7, 49, 170, 68, 223, 233, 114, 133, 30, 40, 179, 195, 88, 110,
+            245, 2, 153, 175, 52, 218, 65, 119, 236, 27, 128, 182, 45, 241, 106,
+            92, 199, 48, 171, 157, 6, 232, 115, 69, 222, 41, 178, 132, 31, 167,
+            60, 10, 145, 102, 253, 203, 80, 190, 37, 19, 136, 127, 228, 210, 73,
+            149, 14, 56, 163, 84, 207, 249, 98, 140, 23, 33, 186, 77, 214, 224,
+            123 };
+
+    /**
+     * Calculate the Cycle CRC based on the passed in byte array
      *
      * @param bytes data to calculate the CRC
      * @return Upper and lower bytes for use with nabu packets
      */
-    public static byte[] CalculateCRC(List<Byte> bytes)
+    public static byte[] calculateCycleCRC(List<Byte> bytes)
     {
         int seed = 0xFFFF;
 
@@ -73,7 +96,7 @@ public class CRC
         {
             int index = (((seed >> 8)) ^ b.intValue()) & 0xFF;
             seed <<= 8;
-            seed ^= table[index];
+            seed ^= cycleCrcTable[index];
         }
 
         // ok, now get the high and low order CRC bytes
@@ -82,5 +105,24 @@ public class CRC
         crcArray[0] = (byte) ((seed >> 8) & 0xFF);
         crcArray[1] = (byte) (seed & 0xFF);
         return crcArray;
+    }
+
+    /**
+     * Calculate the CRC-8/CDMA2000 for NHACP
+     * 
+     * @param bytes data to calculate the CRC
+     * @return int CRC value
+     */
+    public static int calculateNhacpCRC(byte[] bytes)
+    {
+        Integer seed = 0xFF;
+
+        for (byte b : bytes)
+        {
+            int index = (seed ^ b) & 0xFF;
+            seed = nhacpCrcTable[index] ^ (seed >> 8);
+        }
+
+        return seed;
     }
 }

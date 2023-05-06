@@ -30,7 +30,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.lenderman.nabu.adapter.model.Settings;
+import com.lenderman.nabu.adapter.model.settings.Settings;
 
 public class TcpConnection implements Connection
 {

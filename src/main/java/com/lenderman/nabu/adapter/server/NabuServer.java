@@ -9,13 +9,15 @@ import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.connection.Connection;
 import com.lenderman.nabu.adapter.connection.SerialConnection;
 import com.lenderman.nabu.adapter.connection.TcpConnection;
+import com.lenderman.nabu.adapter.extensions.FileStoreExtensions;
 import com.lenderman.nabu.adapter.extensions.HeadlessExtension;
+import com.lenderman.nabu.adapter.extensions.NHACPExtension;
 import com.lenderman.nabu.adapter.extensions.ServerExtension;
 import com.lenderman.nabu.adapter.loader.Loader;
 import com.lenderman.nabu.adapter.loader.LocalLoader;
 import com.lenderman.nabu.adapter.loader.WebLoader;
-import com.lenderman.nabu.adapter.model.NabuSegment;
-import com.lenderman.nabu.adapter.model.Settings;
+import com.lenderman.nabu.adapter.model.packet.NabuSegment;
+import com.lenderman.nabu.adapter.model.settings.Settings;
 
 /**
  * Main implementation of the Nabu server, sits and waits for the nabu to
@@ -85,9 +87,9 @@ public class NabuServer
         sioc = new ServerInputOutputController(connection);
 
         this.extensions = new ArrayList<ServerExtension>();
-        // TODO this.extensions.add(new FileStoreExtensions(this, connection));
+        this.extensions.add(new FileStoreExtensions(sioc, settings));
         this.extensions.add(new HeadlessExtension(this, sioc, settings));
-        // TODO this.extensions.add(new NHACPExtension(this));
+        this.extensions.add(new NHACPExtension(sioc, settings));
     }
 
     /**
@@ -128,35 +130,36 @@ public class NabuServer
                 {
                     throw new Exception("Connection Lost");
                 }
-                int b = sioc.readByte();
+                int b = sioc.getIs().readByte();
                 switch (b)
                 {
                 case 0x85: // Channel
-                    sioc.writeBytes(0x10, 0x6);
-                    int channel = sioc.readByte() + (sioc.readByte() << 8);
+                    sioc.getOs().writeBytes(0x10, 0x6);
+                    int channel = sioc.getIs().readByte()
+                            + (sioc.getIs().readByte() << 8);
                     logger.debug("Received Channel {}", channel);
-                    sioc.writeBytes(0xE4);
+                    sioc.getOs().writeBytes(0xE4);
                     break;
                 case 0x84: // File Transfer
                     this.handleFileRequest();
                     break;
                 case 0x83:
-                    sioc.writeBytes(0x10, 0x6, 0xE4);
+                    sioc.getOs().writeBytes(0x10, 0x6, 0xE4);
                     break;
                 case 0x82:
                     this.configureChannel(this.settings.isAskForChannel());
                     break;
                 case 0x81:
-                    sioc.writeBytes(0x10, 0x6);
-                    sioc.readByte();
-                    sioc.readByte();
-                    sioc.writeBytes(0xE4);
+                    sioc.getOs().writeBytes(0x10, 0x6);
+                    sioc.getIs().readByte();
+                    sioc.getIs().readByte();
+                    sioc.getOs().writeBytes(0xE4);
                     break;
                 case 0x1E:
-                    sioc.writeBytes(0x10, 0xE1);
+                    sioc.getOs().writeBytes(0x10, 0xE1);
                     break;
                 case 0x5:
-                    sioc.writeBytes(0xE4);
+                    sioc.getOs().writeBytes(0xE4);
                     break;
                 case 0xF:
                     break;
@@ -180,7 +183,7 @@ public class NabuServer
                     {
                         logger.error("Unknown command 0x{}",
                                 String.format("%02x", b));
-                        sioc.writeBytes(0x10, 0x6);
+                        sioc.getOs().writeBytes(0x10, 0x6);
                     }
                 }
             }
@@ -203,34 +206,11 @@ public class NabuServer
     }
 
     /**
-     * @return String current working directory
-     */
-    public String getWorkingDirectory() throws Exception
-    {
-        Loader loader;
-        String directory = "";
-
-        // If the path starts with http, go cloud - otherwise local
-        if (settings.getPath().toLowerCase().startsWith("http"))
-        {
-            loader = new WebLoader();
-        }
-        else
-        {
-            loader = new LocalLoader();
-        }
-
-        loader.tryGetDirectory(this.settings.getPath());
-
-        return directory;
-    }
-
-    /**
      * Handle the Nabu's file request
      */
     private void handleFileRequest() throws Exception
     {
-        sioc.writeBytes(0x10, 0x6);
+        sioc.getOs().writeBytes(0x10, 0x6);
 
         // Ok, get the requested packet and segment info
         int packetNumber = sioc.getRequestedPacket();
@@ -242,7 +222,7 @@ public class NabuServer
                 String.format("%06x", packetNumber));
 
         // ok
-        sioc.writeBytes(0xE4);
+        sioc.getOs().writeBytes(0xE4);
         Optional<NabuSegment> segment;
 
         if (segmentNumber == 0x1 && packetNumber == 0x0)
@@ -394,9 +374,9 @@ public class NabuServer
                         }
 
                         // File not found, write unauthorized
-                        sioc.writeBytes(0x90);
-                        sioc.readByte(0x10);
-                        sioc.readByte(0x6);
+                        sioc.getOs().writeBytes(0x90);
+                        sioc.getIs().readByte(0x10);
+                        sioc.getIs().readByte(0x6);
                     }
                 }
                 else
@@ -410,17 +390,17 @@ public class NabuServer
         if (segment.isPresent()
                 && packetNumber <= segment.get().getPackets().size())
         {
-            sioc.writeBytes(0x91);
-            int b = sioc.readByte();
+            sioc.getOs().writeBytes(0x91);
+            int b = sioc.getIs().readByte();
             if (b != 0x10)
             {
-                sioc.writeBytes(0x10, 0x6, 0xE4);
+                sioc.getOs().writeBytes(0x10, 0x6, 0xE4);
                 return;
             }
 
-            sioc.readByte(0x6);
+            sioc.getIs().readByte(0x6);
             sioc.sendPacket(segment.get().getPackets().get(packetNumber));
-            sioc.writeBytes(0x10, 0xE1);
+            sioc.getOs().writeBytes(0x10, 0xE1);
         }
     }
 
@@ -444,17 +424,17 @@ public class NabuServer
      */
     private void configureChannel(boolean askForChannel) throws Exception
     {
-        sioc.writeBytes(0x10, 0x6);
-        sioc.readByte();
+        sioc.getOs().writeBytes(0x10, 0x6);
+        sioc.getIs().readByte();
 
         if (!askForChannel)
         {
-            sioc.writeBytes(0x1F, 0x10, 0xE1);
+            sioc.getOs().writeBytes(0x1F, 0x10, 0xE1);
         }
         else
         {
             logger.debug("Asking for channel");
-            sioc.writeBytes(0xFF, 0x10, 0xE1);
+            sioc.getOs().writeBytes(0xFF, 0x10, 0xE1);
         }
     }
 

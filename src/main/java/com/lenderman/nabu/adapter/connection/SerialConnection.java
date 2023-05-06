@@ -26,7 +26,7 @@ package com.lenderman.nabu.adapter.connection;
 import java.io.InputStream;
 import java.io.OutputStream;
 import com.fazecast.jSerialComm.SerialPort;
-import com.lenderman.nabu.adapter.model.Settings;
+import com.lenderman.nabu.adapter.model.settings.Settings;
 
 public class SerialConnection implements Connection
 {
