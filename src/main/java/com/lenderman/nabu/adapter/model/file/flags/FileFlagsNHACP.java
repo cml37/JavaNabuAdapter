@@ -60,7 +60,14 @@ public class FileFlagsNHACP
             List<OpenFlagsNHACP> list = new ArrayList<OpenFlagsNHACP>();
             for (OpenFlagsNHACP ap : values())
             {
-                if (ap.getValue() == 0 && val == 0)
+                // The least significant 3 bits of the flags field define the
+                // access mode. Thus, the values O_RDONLY, O_RDWR, and O_RDWP
+                // are part of an enumeration and are mutually-exclusive with
+                // one another.
+                //
+                // To address this bit pattern, we need to adjust our "zero
+                // test" by ANDing the bottom three bits first
+                if (ap.getValue() == 0 && (val & 0b0111) == 0)
                 {
                     list.add(ap);
                 }
