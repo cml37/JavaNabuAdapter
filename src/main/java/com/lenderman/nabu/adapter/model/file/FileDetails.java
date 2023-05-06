@@ -73,6 +73,22 @@ public class FileDetails
     }
 
     /**
+     * @return Calendar
+     */
+    public Calendar getModified()
+    {
+        return modified;
+    }
+
+    /**
+     * @return String
+     */
+    public String getFileName()
+    {
+        return fileName;
+    }
+
+    /**
      * @return long
      */
     public long getFileSize()
