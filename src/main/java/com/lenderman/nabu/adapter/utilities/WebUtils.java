@@ -2,10 +2,10 @@ package com.lenderman.nabu.adapter.utilities;
 
 import java.net.URL;
 import java.net.URLConnection;
+import com.lenderman.nabu.adapter.model.settings.Settings;
 
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
- * Copyright(c) 2022 NabuNetwork.com
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,4 +45,28 @@ public class WebUtils
         return webClient;
     }
 
+    /**
+     * Validate the URI
+     * 
+     * @param String URI to validate
+     * @return true if allowed URL
+     */
+    public static boolean validateUri(String uri)
+    {
+        try
+        {
+            URL url = new URL(uri);
+            if (!url.getProtocol().equals("http")
+                    && !url.getProtocol().equals("https"))
+            {
+                return false;
+            }
+            return Settings.allowedUri.contains(url.getHost());
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
 }
+

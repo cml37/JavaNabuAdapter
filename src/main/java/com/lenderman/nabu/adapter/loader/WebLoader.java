@@ -26,7 +26,7 @@ package com.lenderman.nabu.adapter.loader;
 import java.net.URI;
 import java.net.URLConnection;
 import java.util.Optional;
-import org.apache.commons.io.output.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream;
 import com.lenderman.nabu.adapter.utilities.WebUtils;
 
 public class WebLoader implements Loader

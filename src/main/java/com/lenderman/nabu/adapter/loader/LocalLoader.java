@@ -25,9 +25,10 @@ package com.lenderman.nabu.adapter.loader;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 import org.apache.commons.io.IOUtils;
-import com.lenderman.nabu.adapter.model.Settings;
+import com.lenderman.nabu.adapter.model.settings.Settings;
 
 public class LocalLoader implements Loader
 {
@@ -63,8 +64,7 @@ public class LocalLoader implements Loader
     {
         try
         {
-            File file = new File(path);
-            return Optional.of(file.getAbsolutePath());
+            return Optional.of(Paths.get(path).getParent().toString());
         }
         catch (Exception ex)
         {

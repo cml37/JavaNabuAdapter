@@ -23,16 +23,17 @@ package com.lenderman.nabu.adapter.extensions;
  * SOFTWARE.
  */
 
-import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.lenderman.nabu.adapter.model.Settings;
-import com.lenderman.nabu.adapter.model.Target;
-import com.lenderman.nabu.adapter.model.Target.TargetEnum;
+import com.lenderman.nabu.adapter.model.settings.Settings;
+import com.lenderman.nabu.adapter.model.settings.Target;
+import com.lenderman.nabu.adapter.model.settings.Target.TargetEnum;
 import com.lenderman.nabu.adapter.server.NabuServer;
 import com.lenderman.nabu.adapter.server.ServerInputOutputController;
 
@@ -128,11 +129,11 @@ public class HeadlessExtension implements ServerExtension
     private void setCycle() throws Exception
     {
         // Read the value
-        int menu = this.sioc.readByte();
+        int menu = this.sioc.getIs().readByte();
 
         // Read the menu option
         // Get the item number:
-        int menuItem = this.sioc.readByte();
+        int menuItem = this.sioc.getIs().readByte();
 
         List<String> names = new ArrayList<String>();
 
@@ -174,8 +175,8 @@ public class HeadlessExtension implements ServerExtension
      */
     private void setPath() throws Exception
     {
-        int strlen = this.sioc.readByte();
-        String path = this.sioc.readString(strlen);
+        int strlen = this.sioc.getIs().readByte();
+        String path = this.sioc.getIs().readString(strlen);
 
         if (this.settings
                 .getSourceLocation() != Settings.SourceLocation.Headless)
@@ -198,16 +199,14 @@ public class HeadlessExtension implements ServerExtension
         {
             // two things about headless - First, must be in the current working
             // directory and must either be a directory or .nabu
-            File file = new File(path);
-            if (file.isDirectory() || path.toLowerCase().endsWith(".nabu")
-                    || path.toLowerCase().endsWith(".pak"))
+            Path fullPath = Paths.get(System.getProperty("user.dir"), path);
+            if (fullPath.toFile().exists() && !fullPath.toFile().isDirectory()
+                    && (path.toLowerCase().endsWith("")
+                            || path.toLowerCase().endsWith(".nabu")
+                            || path.toLowerCase().endsWith(".pak")))
             {
-                // TODO test to see if file in current path
-                String fullPath = file.getAbsolutePath();
-                if (true)
-                {
-                    server.resetCycle(fullPath);
-                }
+                logger.debug("Valid path: {}", fullPath.toString());
+                server.resetCycle(fullPath.toString());
             }
         }
     }
@@ -218,7 +217,7 @@ public class HeadlessExtension implements ServerExtension
     private List<String> getMenuNames() throws Exception
     {
         // Get the menu number
-        int menu = sioc.readByte();
+        int menu = sioc.getIs().readByte();
         List<String> names = new ArrayList<String>();
         List<Target> cycles = settings.getCycles().getTargets();
 
@@ -251,7 +250,7 @@ public class HeadlessExtension implements ServerExtension
      */
     private void sendMenuCount() throws Exception
     {
-        this.sioc.writeBytes(getMenuNames().size());
+        this.sioc.getOs().writeBytes(getMenuNames().size());
     }
 
     /**
@@ -262,9 +261,9 @@ public class HeadlessExtension implements ServerExtension
         List<String> names = getMenuNames();
 
         // Get the item number:
-        int menuItem = this.sioc.readByte();
+        int menuItem = this.sioc.getIs().readByte();
 
         // Write it out!
-        this.sioc.writeString(names.get(menuItem));
+        this.sioc.getOs().writeString(names.get(menuItem));
     }
 }

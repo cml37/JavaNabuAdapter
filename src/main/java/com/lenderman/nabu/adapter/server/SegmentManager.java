@@ -28,13 +28,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.lenderman.nabu.adapter.model.NabuPacket;
-import com.lenderman.nabu.adapter.model.NabuSegment;
+import com.lenderman.nabu.adapter.model.packet.NabuPacket;
+import com.lenderman.nabu.adapter.model.packet.NabuSegment;
 import com.lenderman.nabu.adapter.utilities.CRC;
+import com.lenderman.nabu.adapter.utilities.ConversionUtils;
 
 public class SegmentManager
 {
@@ -56,40 +55,40 @@ public class SegmentManager
         Calendar dateTime = Calendar.getInstance(TimeZone.getDefault());
 
         List<Byte> list = new ArrayList<>();
-        list.add(byteVal(0x7F));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x7F));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0x7F));
-        list.add(byteVal(0x80));
-        list.add(byteVal(0x30));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x2));
-        list.add(byteVal(0x2));
-        list.add(byteVal(dateTime.get(Calendar.DAY_OF_WEEK)));
-        list.add(byteVal(0x54));
-        list.add(byteVal(dateTime.get(Calendar.MONTH) + 1));
-        list.add(byteVal(dateTime.get(Calendar.DAY_OF_MONTH)));
-        list.add(byteVal(dateTime.get(Calendar.HOUR)));
-        list.add(byteVal(dateTime.get(Calendar.MINUTE)));
-        list.add(byteVal(dateTime.get(Calendar.SECOND)));
-        list.add(byteVal(0x0));
-        list.add(byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x7F));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x7F));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0x7F));
+        list.add(ConversionUtils.byteVal(0x80));
+        list.add(ConversionUtils.byteVal(0x30));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x2));
+        list.add(ConversionUtils.byteVal(0x2));
+        list.add(ConversionUtils.byteVal(dateTime.get(Calendar.DAY_OF_WEEK)));
+        list.add(ConversionUtils.byteVal(0x54));
+        list.add(ConversionUtils.byteVal(dateTime.get(Calendar.MONTH) + 1));
+        list.add(ConversionUtils.byteVal(dateTime.get(Calendar.DAY_OF_MONTH)));
+        list.add(ConversionUtils.byteVal(dateTime.get(Calendar.HOUR)));
+        list.add(ConversionUtils.byteVal(dateTime.get(Calendar.MINUTE)));
+        list.add(ConversionUtils.byteVal(dateTime.get(Calendar.SECOND)));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal(0x0));
 
-        byte[] crcData = CRC.CalculateCRC(list);
+        byte[] crcData = CRC.calculateCycleCRC(list);
 
         list.add(crcData[0]);
         list.add(crcData[1]);
 
-        NabuPacket packet = new NabuPacket(byteVal(0x0), list);
+        NabuPacket packet = new NabuPacket(ConversionUtils.byteVal(0x0), list);
         List<NabuPacket> packetList = new ArrayList<NabuPacket>();
         packetList.add(packet);
 
@@ -131,7 +130,7 @@ public class SegmentManager
                 baos.read(segmentData, 0, segmentLength);
 
                 NabuPacket packet = new NabuPacket(packetNumber,
-                        convertToByteList(segmentData));
+                        ConversionUtils.convertToByteList(segmentData));
                 validatePacket(packet.getSegmentData());
                 list.add(packet);
                 packetNumber++;
@@ -204,23 +203,23 @@ public class SegmentManager
         List<Byte> list = new ArrayList<>();
 
         // Cobble together the header
-        list.add(byteVal((int) (segmentNumber >> 16) & 0xFF));
-        list.add(byteVal((int) (segmentNumber >> 8) & 0xFF));
-        list.add(byteVal((int) (segmentNumber & 0xFF)));
+        list.add(ConversionUtils.byteVal((int) (segmentNumber >> 16) & 0xFF));
+        list.add(ConversionUtils.byteVal((int) (segmentNumber >> 8) & 0xFF));
+        list.add(ConversionUtils.byteVal((int) (segmentNumber & 0xFF)));
         list.add(packetNumber);
 
         // Owner
-        list.add(byteVal(0x1));
+        list.add(ConversionUtils.byteVal(0x1));
 
         // Tier
-        list.add(byteVal(0x7F));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0xFF));
-        list.add(byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0x7F));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0xFF));
+        list.add(ConversionUtils.byteVal(0xFF));
 
         // Mystery bytes
-        list.add(byteVal(0x7F));
-        list.add(byteVal(0x80));
+        list.add(ConversionUtils.byteVal(0x7F));
+        list.add(ConversionUtils.byteVal(0x80));
 
         // Packet Type
         byte type = 0x20;
@@ -231,14 +230,14 @@ public class SegmentManager
         }
         else if (packetNumber == 0)
         {
-            type = byteVal(0xa1);
+            type = ConversionUtils.byteVal(0xa1);
         }
 
         list.add(type);
         list.add(packetNumber);
-        list.add(byteVal(0x0));
-        list.add(byteVal((int) (offset >> 8) & 0xFF));
-        list.add(byteVal((int) (offset & 0xFF)));
+        list.add(ConversionUtils.byteVal(0x0));
+        list.add(ConversionUtils.byteVal((int) (offset >> 8) & 0xFF));
+        list.add(ConversionUtils.byteVal((int) (offset & 0xFF)));
 
         // Payload
         for (int index = 0; index < bytesRead; index++)
@@ -247,7 +246,7 @@ public class SegmentManager
         }
 
         // CRC
-        byte[] crcData = CRC.CalculateCRC(list);
+        byte[] crcData = CRC.calculateCycleCRC(list);
 
         list.add(crcData[0]);
         list.add(crcData[1]);
@@ -265,7 +264,7 @@ public class SegmentManager
         data.addAll(packetData);
         data.remove(packetData.size() - 1);
         data.remove(packetData.size() - 2);
-        byte[] crcData = CRC.CalculateCRC(data);
+        byte[] crcData = CRC.calculateCycleCRC(data);
 
         if (packetData.get(packetData.size() - 2) != crcData[0]
                 || packetData.get(packetData.size() - 1) != crcData[1])
@@ -284,28 +283,5 @@ public class SegmentManager
             packetData.set(packetData.size() - 2, crcData[0]);
             packetData.set(packetData.size() - 1, crcData[1]);
         }
-    }
-
-    /**
-     * Convert a byte Array to a Byte List
-     * 
-     * @param byte[] byteArray
-     * @return List<Byte>
-     */
-    private static List<Byte> convertToByteList(byte[] byteArray)
-    {
-        return IntStream.range(0, byteArray.length).mapToObj(i -> byteArray[i])
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Convert an integer to a Byte
-     * 
-     * @param Integer value
-     * @return Byte
-     */
-    private static Byte byteVal(Integer value)
-    {
-        return value.byteValue();
     }
 }

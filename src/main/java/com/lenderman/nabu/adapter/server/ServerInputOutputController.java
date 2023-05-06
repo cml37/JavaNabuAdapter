@@ -23,12 +23,11 @@ package com.lenderman.nabu.adapter.server;
  * SOFTWARE.
  */
 
-import java.io.BufferedOutputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
 import com.lenderman.nabu.adapter.connection.Connection;
-import com.lenderman.nabu.adapter.model.NabuPacket;
+import com.lenderman.nabu.adapter.model.packet.NabuPacket;
+import com.lenderman.nabu.adapter.stream.InputStreamHolder;
+import com.lenderman.nabu.adapter.stream.OutputStreamHolder;
 
 public class ServerInputOutputController
 {
@@ -38,12 +37,44 @@ public class ServerInputOutputController
     private Connection connection;
 
     /**
+     * Output Stream
+     */
+    private OutputStreamHolder output;
+
+    /**
+     * Input Stream
+     */
+    private InputStreamHolder input;
+
+    /**
+     * Get the Output Stream
+     * 
+     * @return OutputStreamHolder
+     */
+    public OutputStreamHolder getOs()
+    {
+        return output;
+    }
+
+    /**
+     * Get the Input Stream
+     * 
+     * @return InputStreamHolder
+     */
+    public InputStreamHolder getIs()
+    {
+        return input;
+    }
+
+    /**
      * Constructor
      */
     public ServerInputOutputController(Connection connection) throws Exception
     {
         this.connection = connection;
         connection.startServer();
+        output = new OutputStreamHolder(connection.getNabuOutputStream());
+        input = new InputStreamHolder(connection.getNabuInputStream());
     }
 
     /**
@@ -68,122 +99,15 @@ public class ServerInputOutputController
     }
 
     /**
-     * Calculate a unsigned LEB 128 value that must be prepended to the
-     * beginning of a string when sending it over the wire. This helps emulate
-     * the C# BinaryWriter
-     * 
-     * @param int value for which we need to calculate the LEB length
-     */
-    public List<Byte> getUnsignedLeb128(int value)
-    {
-        List<Byte> leb = new ArrayList<Byte>();
-        int remaining = value >>> 7;
-        while (remaining != 0)
-        {
-            leb.add((byte) ((value & 0x7f) | 0x80));
-            value = remaining;
-            remaining >>>= 7;
-        }
-        leb.add((byte) (value & 0x7f));
-        return leb;
-    }
-
-    /**
-     * Write the byte array to the stream
-     */
-    public void writeBytes(Integer... bytes) throws Exception
-    {
-        BufferedOutputStream bos = new BufferedOutputStream(
-                connection.getNabuOutputStream());
-        for (Integer i : bytes)
-        {
-            bos.write(i.byteValue());
-        }
-        bos.flush();
-    }
-
-    /**
-     * Write the string to the stream, prepended with a LEB 128 length
-     * 
-     * @param String value
-     */
-    public void writeString(String value) throws Exception
-    {
-        List<Byte> leb = getUnsignedLeb128(value.length());
-
-        BufferedOutputStream bos = new BufferedOutputStream(
-                connection.getNabuOutputStream());
-
-        for (Byte b : leb)
-        {
-            bos.write(b);
-        }
-
-        for (byte b : value.getBytes())
-        {
-            bos.write(b);
-        }
-        bos.flush();
-    }
-
-    /**
-     * Read a single byte from the stream
-     * 
-     * @return read byte
-     */
-    public int readByte() throws Exception
-    {
-        return this.connection.getNabuInputStream().read();
-    }
-
-    /**
-     * Read Byte - but throw if the byte we read is not what we expect (passed
-     * in)
-     * 
-     * @param expetedByte This is the value we expect to read
-     * @return The read byte, or throw
-     */
-    public int readByte(int expectedByte) throws Exception
-    {
-        int num = this.readByte();
-
-        if (num != expectedByte)
-        {
-            throw new Exception("Read " + String.format("%02x", num)
-                    + " but expected " + String.format("%02x", expectedByte));
-        }
-
-        return num;
-    }
-
-    /**
-     * Read a string from the stream
-     * 
-     * @param String length to read
-     */
-    public String readString(int length) throws Exception
-    {
-        InputStreamReader isr = new InputStreamReader(
-                connection.getNabuInputStream());
-
-        StringBuilder string = new StringBuilder();
-        for (int i = 0; i < length; i++)
-        {
-            string.append(isr.read());
-        }
-        return string.toString();
-    }
-
-    /**
      * Get the requested segment
      * 
      * @return int segment
      */
     public int getRequestedSegment() throws Exception
     {
-        int b1 = this.readByte();
-        int b2 = this.readByte();
-        int b3 = this.readByte();
+        int b1 = input.readByte();
+        int b2 = input.readByte();
+        int b3 = input.readByte();
         int segment = b1 + (b2 << 8) + (b3 << 16);
         return segment;
     }
@@ -195,7 +119,7 @@ public class ServerInputOutputController
      */
     public int getRequestedPacket() throws Exception
     {
-        return this.readByte();
+        return input.readByte();
     }
 
     /**
@@ -205,14 +129,7 @@ public class ServerInputOutputController
      */
     public void sendPacket(NabuPacket packet) throws Exception
     {
-        BufferedOutputStream st = new BufferedOutputStream(
-                connection.getNabuOutputStream());
-
-        List<Byte> array = packet.getEscapedData();
-        for (Byte b : array)
-        {
-            st.write(b);
-        }
-        st.flush();
+        List<Integer> array = packet.getEscapedData();
+        output.writeBytes(array.toArray(new Integer[array.size()]));
     }
 }
