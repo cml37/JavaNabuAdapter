@@ -2,8 +2,8 @@
 Java version of https://github.com/nabunetwork/Adaptor
 
 # Deficiencies 
-* Needs some serious testing, especially for RetroNet File Store Extension mode
-* NHACP Extension could use additional testing
+* RetroNet File Store Extension mode is completely untested
+* NHACP Extension could use additional testing, especially for modes not executed by ISHKUR CP/M
 
 # Building
 Assuming you have Gradle and Java 8 or higher installed, it's as easy as `gradlew jar`
