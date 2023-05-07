@@ -342,8 +342,7 @@ public class NHACPExtension implements ServerExtension
         session.getFileHandles().put(fileHandle, Optional.of(FileHandle));
 
         // Let the NABU know what we've done:
-        outgoingFrame.writeBytes(0x83);
-        outgoingFrame.writeBytes(fileHandle);
+        outgoingFrame.writeBytes(0x83, fileHandle);
 
         // no data buffered
         outgoingFrame.writeInt(Files.size(FileHandle.getFullFilename()));

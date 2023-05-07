@@ -91,8 +91,10 @@ public class StreamUtils
     public static void writeShort(OutputStream stream, Integer shortVal)
             throws Exception
     {
-        stream.write((int) (shortVal & 0xff));
-        stream.write((int) ((shortVal >> 8) & 0xff));
+        BufferedOutputStream bos = new BufferedOutputStream(stream);
+        bos.write((int) (shortVal & 0xff));
+        bos.write((int) ((shortVal >> 8) & 0xff));
+        bos.flush();
     }
 
     /**
@@ -103,10 +105,12 @@ public class StreamUtils
     public static void writeInt(OutputStream stream, Long intVal)
             throws Exception
     {
-        stream.write((int) (intVal & 0xff));
-        stream.write((int) ((intVal >> 8) & 0xff));
-        stream.write((int) ((intVal >> 16) & 0xff));
-        stream.write((int) ((intVal >> 24) & 0xff));
+        BufferedOutputStream bos = new BufferedOutputStream(stream);
+        bos.write((int) (intVal & 0xff));
+        bos.write((int) ((intVal >> 8) & 0xff));
+        bos.write((int) ((intVal >> 16) & 0xff));
+        bos.write((int) ((intVal >> 24) & 0xff));
+        bos.flush();
     }
 
     /**
