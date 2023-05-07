@@ -97,7 +97,7 @@ public class Settings
         allowedUri.add("www.retrotechchris.com");
 
         topLevelHeadlessMenu.add("NabuNetwork.com");
-        topLevelHeadlessMenu.add("Homebrew");
+        topLevelHeadlessMenu.add("Homebrew Software");
         topLevelHeadlessMenu.add("Game Room");
         topLevelHeadlessMenu.add("Local Path");
     }
