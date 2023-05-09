@@ -47,11 +47,11 @@ dependencies {
 
 task downloadCpmFiles(type: Download) {
     src ([
-        'https://nabu.retrotechchris.com/cpm/CPM22.SYS',
-        'https://nabu.retrotechchris.com/cpm/FONT.GRB',
-        'https://nabu.retrotechchris.com/cpm/NDSK_A.IMG',
-        'https://nabu.retrotechchris.com/cpm/NDSK_B.IMG',
-        'https://nabu.retrotechchris.com/cpm/NDSK_BOOT.nabu'
+        'https://nabunetwork.com/cpm/CPM22.SYS',
+        'https://nabunetwork.com/cpm/FONT.GRB',
+        'https://nabunetwork.com/cpm/NDSK_A.IMG',
+        'https://nabunetwork.com/cpm/NDSK_B.IMG',
+        'https://nabunetwork.com/cpm/NDSK_BOOT.nabu'
     ])
     dest "cpm"
     onlyIfModified true
