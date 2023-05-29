@@ -8,8 +8,8 @@ WARNING: Java 5 is ancient, but so is Windows '98, which is the target OS for ru
 * NHACP Extension could use additional testing, especially for modes not executed by ISHKUR CP/M
 
 # Building
-* Set your JAVA_HOME to a Java 8 JDK (or perhaps a Java 11 JDK, but I know for sure that Java 15 JDK's won't build Java 5 classes)
-* run mvn install 
+* Set your JAVA_HOME to a Java 8 JDK (later JDKs won't build Java 5 classes)
+* mvn install 
 
 
 # Running
