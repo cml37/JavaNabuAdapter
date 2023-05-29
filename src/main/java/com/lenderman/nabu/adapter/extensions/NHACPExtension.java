@@ -581,7 +581,7 @@ public class NHACPExtension implements ServerExtension
             // Zero pad array if it doesn't meet the length
             if (data.length < length)
             {
-                byte[] returnData = Arrays.copyOfRange(data, 0, data.length);
+                byte[] returnData = Arrays.copyOfRange(data, 0, length);
 
                 outgoingFrame.writeBytes(0x84);
 
