@@ -2,23 +2,16 @@ package com.lenderman.nabu.adapter.extensions;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.loader.WebLoader;
 import com.lenderman.nabu.adapter.model.file.FileDetails;
 import com.lenderman.nabu.adapter.model.file.FileHandle;
@@ -71,16 +64,16 @@ public class NHACPExtension implements ServerExtension
     /**
      * Class Logger
      */
-    private static final Logger logger = LogManager
-            .getLogger(NHACPExtension.class);
+    private static final Logger logger = Logger.getLogger(NHACPExtension.class);
 
     /**
      * Formatters for writing out dates
      */
-    private static DateTimeFormatter dateFormatter = DateTimeFormatter
-            .ofPattern("yyyyMMdd");
-    private static DateTimeFormatter timeFormatter = DateTimeFormatter
-            .ofPattern("HHmmss");
+
+    private static SimpleDateFormat dateFormatter = new SimpleDateFormat(
+            "yyyyMMdd");
+    private static SimpleDateFormat timeFormatter = new SimpleDateFormat(
+            "HHmmss");
 
     /**
      * Error Strings Defined
@@ -110,7 +103,7 @@ public class NHACPExtension implements ServerExtension
     /**
      * Collection of active NHACP sessions
      */
-    private HashMap<Integer, Optional<NHACPSession>> sessions;
+    private HashMap<Integer, NHACPSession> sessions;
 
     /**
      * Constructor
@@ -135,8 +128,8 @@ public class NHACPExtension implements ServerExtension
         {
             NHACPFrame frame = new NHACPFrame(sioc);
 
-            logger.debug("NHACPFrame opcode is {}",
-                    String.format("%08x", frame.getOpCode()));
+            logger.debug("NHACPFrame opcode is "
+                    + String.format("%08x", frame.getOpCode()));
 
             switch (frame.getOpCode())
             {
@@ -232,22 +225,29 @@ public class NHACPExtension implements ServerExtension
         if (frame.getSessionId() == 0x00)
         {
             this.reset();
-            this.sessions.put(0, Optional.of(session));
+            this.sessions.put(0, session);
             sessionId = 0x00;
         }
         else if (frame.getSessionId() == 0xff)
         {
+            Integer found = null;
             // find the first unused session ID
-            Optional<Integer> key = this.sessions.keySet().stream()
-                    .filter(k -> !sessions.get(k).isPresent()).findFirst();
+            for (Integer key : this.sessions.keySet())
+            {
+                if (sessions.get(key) == null)
+                {
+                    found = key;
+                    break;
+                }
+            }
 
-            if (!key.isPresent())
+            if (found == null)
             {
                 this.sendError(session.getSettings().isCrc(),
                         ErrorNHACP.EINVAL);
                 return;
             }
-            sessionId = ConversionUtils.byteVal(key.get());
+            sessionId = ConversionUtils.byteVal(found);
         }
         else
         {
@@ -268,7 +268,7 @@ public class NHACPExtension implements ServerExtension
     private void storageOpen(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -287,7 +287,7 @@ public class NHACPExtension implements ServerExtension
 
         fileName = this.sanitizeFilename(fileName);
 
-        if (session.getFileHandles().get(fileHandle).isPresent()
+        if (session.getFileHandles().get(fileHandle) != null
                 && fileHandle != ConversionUtils.MAX_BYTE_VALUE)
         {
             // Filehandle is already in use, must return a failure.
@@ -309,43 +309,55 @@ public class NHACPExtension implements ServerExtension
             URI uri = new URI(fileName);
             fileName = uri.getPath();
 
-            Path fullPathAndFilename = Paths
-                    .get(this.settings.getWorkingDirectory().get(), fileName);
-            if (!fullPathAndFilename.toFile().exists())
+            File fullPathAndFilename = new File(
+                    this.settings.getWorkingDirectory() + File.separator
+                            + fileName);
+            if (!fullPathAndFilename.exists())
             {
                 WebLoader webLoader = new WebLoader();
-                Optional<byte[]> data = webLoader.tryGetData(fileName);
-                Files.write(fullPathAndFilename, data.get());
+                byte[] data = webLoader.tryGetData(fileName);
+                FileOutputStream outputStream = new FileOutputStream(
+                        fullPathAndFilename);
+                outputStream.write(data);
+                outputStream.close();
             }
         }
 
         // If this handle is the max value, find the first unused handle
         if (fileHandle == ConversionUtils.MAX_BYTE_VALUE)
         {
-            Optional<Integer> key = session.getFileHandles().keySet().stream()
-                    .filter(k -> !session.getFileHandles().get(k).isPresent())
-                    .findFirst();
+            // find the first unused session ID
+            Integer found = null;
+            for (Integer key : this.sessions.keySet())
+            {
+                if (sessions.get(key) == null)
+                {
+                    found = key;
+                    break;
+                }
+            }
 
-            if (!key.isPresent())
+            if (found == null)
             {
                 this.sendError(session.getSettings().isCrc(), ErrorNHACP.EPERM);
                 return;
             }
-            fileHandle = key.get();
+            fileHandle = found;
         }
 
         FileHandle FileHandle = new FileHandle(
-                this.settings.getWorkingDirectory().get(), fileName, flags,
+                this.settings.getWorkingDirectory(), fileName, flags,
                 fileHandle);
 
         // Mark this handle as in use.
-        session.getFileHandles().put(fileHandle, Optional.of(FileHandle));
+        session.getFileHandles().put(fileHandle, FileHandle);
 
         // Let the NABU know what we've done:
         outgoingFrame.writeBytes(0x83, fileHandle);
 
         // no data buffered
-        outgoingFrame.writeInt(Files.size(FileHandle.getFullFilename()));
+        outgoingFrame
+                .writeInt((new File(FileHandle.getFullFilename()).length()));
 
         this.writeFrame(session.getSettings().isCrc(),
                 outgoingFrame.getBytes());
@@ -359,7 +371,7 @@ public class NHACPExtension implements ServerExtension
     public void storageGet(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -380,14 +392,15 @@ public class NHACPExtension implements ServerExtension
         }
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        if (FileHandle.isPresent())
+        if (FileHandle != null)
         {
-            byte[] data = Arrays.copyOfRange(
-                    Files.readAllBytes(FileHandle.get().getFullFilename()),
-                    (int) offset, (int) offset + length);
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            seeker.seek(offset);
+            byte[] data = new byte[length];
+            seeker.read(data);
 
             // write out the data buffer
             outgoingFrame.writeBytes(0x84);
@@ -403,9 +416,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "StorageGet Requested file handle to read: {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("StorageGet Requested file handle to read: "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
 
             // send back error
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
@@ -420,7 +433,7 @@ public class NHACPExtension implements ServerExtension
     public void storagePut(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -443,19 +456,21 @@ public class NHACPExtension implements ServerExtension
         }
 
         // Get the file handle
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        List<OpenFlagsNHACP> flags = FileHandle.get()
-                .getFlagsAsOpenNHACPFlags();
-        if (FileHandle.isPresent() && (flags.contains(OpenFlagsNHACP.O_RDONLY)
+        List<OpenFlagsNHACP> flags = FileHandle.getFlagsAsOpenNHACPFlags();
+        if (FileHandle != null && (flags.contains(OpenFlagsNHACP.O_RDONLY)
                 || flags.contains(OpenFlagsNHACP.O_RDWR)))
         {
-            byte[] bytelist = Files
-                    .readAllBytes(FileHandle.get().getFullFilename());
-            List<Byte> list = IntStream.range(0, bytelist.length)
-                    .mapToObj(i -> bytelist[i]).collect(Collectors.toList());
-
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            byte[] bytelist = new byte[(int) FileHandle.getFileSize()];
+            seeker.read(bytelist);
+            List<Byte> list = new ArrayList<Byte>();
+            for (byte b : bytelist)
+            {
+                list.add(b);
+            }
             int filesize = bytelist.length;
 
             // Zero pad if the offset is bigger than the file size
@@ -470,18 +485,23 @@ public class NHACPExtension implements ServerExtension
             }
             Byte[] bytes = list.toArray(new Byte[list.size()]);
             byte[] bytes2 = new byte[bytes.length];
-            IntStream.range(0, bytes.length).forEach(x -> bytes2[x] = bytes[x]);
-            Files.write(FileHandle.get().getFullFilename(), bytes2);
+            for (int i = 0; i < bytes.length; i++)
+            {
+                bytes2[i] = bytes[i];
+            }
 
+            FileOutputStream outputStream = new FileOutputStream(
+                    new File(FileHandle.getFileName()));
+            outputStream.write(bytes2);
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
                     outgoingFrame.getBytes());
         }
         else
         {
-            logger.error(
-                    "Requested handle in HandleDeleteReplace {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested handle in HandleDeleteReplace "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -494,10 +514,10 @@ public class NHACPExtension implements ServerExtension
     public void getDateTime(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
-        LocalDateTime now = LocalDateTime.now();
+        Date now = new Date();
 
         String date = dateFormatter.format(now);
         String time = timeFormatter.format(now);
@@ -516,11 +536,11 @@ public class NHACPExtension implements ServerExtension
     private void fileClose(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         // first byte, the file handle
         int fileHandle = frame.getMemoryStream().readByte();
-        session.getFileHandles().put(fileHandle, Optional.empty());
+        session.getFileHandles().put(fileHandle, null);
 
         // No response is sent to the NABU for this command
     }
@@ -533,7 +553,7 @@ public class NHACPExtension implements ServerExtension
     private void getErrorDetails(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         // Get the code
         frame.getMemoryStream().readShort();
@@ -551,7 +571,7 @@ public class NHACPExtension implements ServerExtension
     private void storageGetBlock(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -569,19 +589,29 @@ public class NHACPExtension implements ServerExtension
         long offset = blockNumber * length;
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        if (FileHandle.isPresent())
+        if (FileHandle != null)
         {
-            byte[] data = Arrays.copyOfRange(
-                    Files.readAllBytes(FileHandle.get().getFullFilename()),
-                    (int) offset, (int) offset + length);
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            seeker.seek(offset);
+            byte[] data = new byte[length];
+            seeker.read(data);
 
             // Zero pad array if it doesn't meet the length
             if (data.length < length)
             {
-                byte[] returnData = Arrays.copyOfRange(data, 0, data.length);
+                byte[] returnData = new byte[length];
+                for (int i = 0; i < data.length; i++)
+                {
+                    returnData[i] = data[i];
+                }
+
+                for (int i = data.length; i < length; i++)
+                {
+                    returnData[i] = 0;
+                }
 
                 outgoingFrame.writeBytes(0x84);
 
@@ -608,9 +638,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "StorageGet Requested file handle to read: {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("StorageGet Requested file handle to read: "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
 
             // send back error
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
@@ -625,7 +655,7 @@ public class NHACPExtension implements ServerExtension
     public void storagePutBlock(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -645,18 +675,20 @@ public class NHACPExtension implements ServerExtension
         long offset = blockNumber * length;
 
         // Get the file handle
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        List<OpenFlagsNHACP> flags = FileHandle.get()
-                .getFlagsAsOpenNHACPFlags();
-        if (FileHandle.isPresent() && flags.contains(OpenFlagsNHACP.O_RDWR))
+        List<OpenFlagsNHACP> flags = FileHandle.getFlagsAsOpenNHACPFlags();
+        if (FileHandle != null && flags.contains(OpenFlagsNHACP.O_RDWR))
         {
-            byte[] bytelist = Files
-                    .readAllBytes(FileHandle.get().getFullFilename());
-            List<Byte> list = IntStream.range(0, bytelist.length)
-                    .mapToObj(i -> bytelist[i]).collect(Collectors.toList());
-
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            byte[] bytelist = new byte[(int) FileHandle.getFileSize()];
+            seeker.read(bytelist);
+            List<Byte> list = new ArrayList<Byte>();
+            for (byte b : bytelist)
+            {
+                list.add(b);
+            }
             int filesize = bytelist.length;
 
             // Zero pad if the offset is bigger than the file size
@@ -672,9 +704,13 @@ public class NHACPExtension implements ServerExtension
             }
             Byte[] bytes = list.toArray(new Byte[list.size()]);
             byte[] bytes2 = new byte[bytes.length];
-            IntStream.range(0, bytes.length).forEach(x -> bytes2[x] = bytes[x]);
-
-            Files.write(FileHandle.get().getFullFilename(), bytes2);
+            for (int i = 0; i < bytes.length; i++)
+            {
+                bytes2[i] = bytes[i];
+            }
+            FileOutputStream outputStream = new FileOutputStream(
+                    new File(FileHandle.getFileName()));
+            outputStream.write(bytes2);
 
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
@@ -682,9 +718,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "Requested handle in StoragePutBlock {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested handle in StoragePutBlock "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -697,7 +733,7 @@ public class NHACPExtension implements ServerExtension
     private void fileRead(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -712,18 +748,17 @@ public class NHACPExtension implements ServerExtension
         int length = frame.getMemoryStream().readShort();
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
         // if the file handle is null, what the heck?
-        if (FileHandle.isPresent())
+        if (FileHandle != null)
         {
-            byte[] data = Arrays.copyOfRange(
-                    Files.readAllBytes(FileHandle.get().getFullFilename()),
-                    (int) FileHandle.get().getIndex(),
-                    (int) FileHandle.get().getIndex() + length);
-            FileHandle.get()
-                    .setIndex(FileHandle.get().getIndex() + data.length);
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            seeker.seek(FileHandle.getIndex());
+            byte[] data = new byte[length];
+            seeker.read(data);
+            FileHandle.setIndex(FileHandle.getIndex() + data.length);
 
             // write out the data buffer
             outgoingFrame.writeBytes(0x84);
@@ -739,9 +774,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "Requested file handle for FileHandleReadSeq {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested file handle for FileHandleReadSeq "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -754,7 +789,7 @@ public class NHACPExtension implements ServerExtension
     private void fileWrite(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -778,23 +813,24 @@ public class NHACPExtension implements ServerExtension
         }
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        List<OpenFlagsNHACP> nhacpFlags = FileHandle.get()
-                .getFlagsAsOpenNHACPFlags();
-        if (FileHandle.isPresent()
-                && nhacpFlags.contains(OpenFlagsNHACP.O_RDWR))
+        List<OpenFlagsNHACP> nhacpFlags = FileHandle.getFlagsAsOpenNHACPFlags();
+        if (FileHandle != null && nhacpFlags.contains(OpenFlagsNHACP.O_RDWR))
         {
-            byte[] bytelist = Files
-                    .readAllBytes(FileHandle.get().getFullFilename());
-            List<Byte> list = IntStream.range(0, bytelist.length)
-                    .mapToObj(i -> bytelist[i]).collect(Collectors.toList());
-
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            byte[] bytelist = new byte[(int) FileHandle.getFileSize()];
+            seeker.read(bytelist);
+            List<Byte> list = new ArrayList<Byte>();
+            for (byte b : bytelist)
+            {
+                list.add(b);
+            }
             int filesize = bytelist.length;
 
             // Zero pad if the current index is bigger than the file size
-            while (filesize < FileHandle.get().getIndex())
+            while (filesize < FileHandle.getIndex())
             {
                 list.add(ConversionUtils.byteVal(0x0));
                 filesize++;
@@ -802,13 +838,17 @@ public class NHACPExtension implements ServerExtension
 
             for (int i = 0; i < length; i++)
             {
-                list.set((int) (i + FileHandle.get().getIndex()), data[i]);
+                list.set((int) (i + FileHandle.getIndex()), data[i]);
             }
             Byte[] bytes = list.toArray(new Byte[list.size()]);
             byte[] bytes2 = new byte[bytes.length];
-            IntStream.range(0, bytes.length).forEach(x -> bytes2[x] = bytes[x]);
-
-            Files.write(FileHandle.get().getFullFilename(), bytes2);
+            for (int i = 0; i < bytes.length; i++)
+            {
+                bytes2[i] = bytes[i];
+            }
+            FileOutputStream outputStream = new FileOutputStream(
+                    new File(FileHandle.getFileName()));
+            outputStream.write(bytes2);
 
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
@@ -816,9 +856,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "Requested handle in FileHandleReadSeq {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested handle in FileHandleReadSeq "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -831,7 +871,7 @@ public class NHACPExtension implements ServerExtension
     private void fileSeek(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -848,48 +888,47 @@ public class NHACPExtension implements ServerExtension
         List<SeekFlagsNHACP> seekFlags = SeekFlagsNHACP.parse(seekOption);
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        if (FileHandle.isPresent())
+        if (FileHandle != null)
         {
-            long length = Files.size(FileHandle.get().getFullFilename());
+            long length = (new File(FileHandle.getFullFilename())).length();
 
             if (seekFlags.contains(SeekFlagsNHACP.SET))
             {
                 // Seek from the start of the file
-                FileHandle.get().setIndex(offset);
+                FileHandle.setIndex(offset);
             }
             else if (seekFlags.contains(SeekFlagsNHACP.CUR))
             {
                 // Seek from the current position in the file.
-                FileHandle.get().setIndex(FileHandle.get().getIndex() + offset);
+                FileHandle.setIndex(FileHandle.getIndex() + offset);
             }
             else
             {
                 // Last option is from the end of the file.
-                FileHandle.get().setIndex(length - offset);
+                FileHandle.setIndex(length - offset);
             }
 
-            if (FileHandle.get().getIndex() < 0)
+            if (FileHandle.getIndex() < 0)
             {
-                FileHandle.get().setIndex(0);
+                FileHandle.setIndex(0);
             }
-            else if (FileHandle.get().getIndex() > length)
+            else if (FileHandle.getIndex() > length)
             {
-                FileHandle.get().setIndex(length);
+                FileHandle.setIndex(length);
             }
 
             outgoingFrame.writeBytes(0x89);
-            outgoingFrame.writeInt(FileHandle.get().getIndex());
+            outgoingFrame.writeInt(FileHandle.getIndex());
             this.writeFrame(session.getSettings().isCrc(),
                     outgoingFrame.getBytes());
         }
         else
         {
-            logger.error(
-                    "Requested file handle for FileHandleSeek {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested file handle for FileHandleSeek "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -902,7 +941,7 @@ public class NHACPExtension implements ServerExtension
     public void fileGetInfo(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -911,25 +950,21 @@ public class NHACPExtension implements ServerExtension
         int fileHandle = frame.getMemoryStream().readByte();
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        if (FileHandle.isPresent())
+        if (FileHandle != null)
         {
-            Path path = Paths.get(this.settings.getWorkingDirectory().get(),
-                    FileHandle.get().getFileName());
+            File path = new File(this.settings.getWorkingDirectory()
+                    + File.separator + FileHandle.getFileName());
 
-            if (path.toFile().exists())
+            if (path.exists())
             {
-                FileDetails details = new FileDetails(path);
+                FileDetails details = new FileDetails(path.getAbsolutePath());
                 outgoingFrame.writeBytes(0x86);
 
                 // Write date time
-                LocalDateTime now = LocalDateTime.ofInstant(
-                        details.getModified().toInstant(),
-                        ZoneId.systemDefault());
-                String date = dateFormatter.format(now);
-                String time = timeFormatter.format(now);
+                String date = dateFormatter.format(details.getModified());
+                String time = timeFormatter.format(details.getModified());
                 outgoingFrame.writeBytes(date.getBytes());
                 outgoingFrame.writeBytes(time.getBytes());
 
@@ -957,16 +992,16 @@ public class NHACPExtension implements ServerExtension
             else
             {
                 logger.error(
-                        "Requested file for getInfo but it was not found on disk: ",
-                        path.toString());
+                        "Requested file for getInfo but it was not found on disk: "
+                                + path.toString());
                 this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
             }
         }
         else
         {
-            logger.error(
-                    "Requested file handle for getInfo {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested file handle for getInfo "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -979,7 +1014,7 @@ public class NHACPExtension implements ServerExtension
     public void fileSetSize(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -991,17 +1026,20 @@ public class NHACPExtension implements ServerExtension
         long newFileSize = frame.getMemoryStream().readInt();
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        List<OpenFlagsNHACP> flags = FileHandle.get()
-                .getFlagsAsOpenNHACPFlags();
-        if (FileHandle.isPresent() && flags.contains(OpenFlagsNHACP.O_RDWR))
+        List<OpenFlagsNHACP> flags = FileHandle.getFlagsAsOpenNHACPFlags();
+        if (FileHandle != null && flags.contains(OpenFlagsNHACP.O_RDWR))
         {
-            byte[] bytelist = Files
-                    .readAllBytes(FileHandle.get().getFullFilename());
-            List<Byte> list = IntStream.range(0, bytelist.length)
-                    .mapToObj(i -> bytelist[i]).collect(Collectors.toList());
+            RandomAccessFile seeker = new RandomAccessFile(
+                    FileHandle.getFullFilename(), "r");
+            byte[] bytelist = new byte[(int) FileHandle.getFileSize()];
+            seeker.read(bytelist);
+            List<Byte> list = new ArrayList<Byte>();
+            for (byte b : bytelist)
+            {
+                list.add(b);
+            }
 
             int filesize = bytelist.length;
 
@@ -1014,9 +1052,13 @@ public class NHACPExtension implements ServerExtension
 
             Byte[] bytes = list.toArray(new Byte[(int) list.size()]);
             byte[] bytes2 = new byte[(int) newFileSize];
-            IntStream.range(0, (int) newFileSize)
-                    .forEach(x -> bytes2[x] = bytes[x]);
-            Files.write(FileHandle.get().getFullFilename(), bytes2);
+            for (int i = 0; i < newFileSize; i++)
+            {
+                bytes2[i] = bytes[i];
+            }
+            FileOutputStream outputStream = new FileOutputStream(
+                    new File(FileHandle.getFileName()));
+            outputStream.write(bytes2);
 
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
@@ -1025,9 +1067,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "Requested file handle for fileSetSize {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested file handle for fileSetSize "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -1040,7 +1082,7 @@ public class NHACPExtension implements ServerExtension
     public void listDir(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -1062,21 +1104,19 @@ public class NHACPExtension implements ServerExtension
                 0);
 
         // Retrieve this file handle from the file handle list.
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        if (FileHandle.isPresent())
+        if (FileHandle != null)
         {
-            Path path = Paths.get(this.settings.getWorkingDirectory().get(),
-                    FileHandle.get().getFileName());
-            File dir = path.toFile();
+            File dir = new File(this.settings.getWorkingDirectory()
+                    + File.separator + FileHandle.getFileName());
             FileFilter fileFilter = new WildcardFileFilter(searchPattern);
             File[] files = dir.listFiles(fileFilter);
             for (File file : files)
             {
                 session.getFileDetails()
                         .get(ConversionUtils.byteVal(fileHandle))
-                        .add(new FileDetails(file.toPath()));
+                        .add(new FileDetails(file.getAbsolutePath()));
             }
 
             outgoingFrame.writeBytes(0x81);
@@ -1085,9 +1125,9 @@ public class NHACPExtension implements ServerExtension
         }
         else
         {
-            logger.error(
-                    "Requested file handle for listDir {} but it was not found",
-                    String.format("%06x", fileHandle));
+            logger.error("Requested file handle for listDir "
+                    + String.format("%06x", fileHandle)
+                    + " but it was not found");
             this.sendError(session.getSettings().isCrc(), ErrorNHACP.EBADF);
         }
     }
@@ -1100,7 +1140,7 @@ public class NHACPExtension implements ServerExtension
     public void getDirEntry(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -1111,10 +1151,9 @@ public class NHACPExtension implements ServerExtension
         // Get the length and throw it away
         int maxLengthOfName = frame.getMemoryStream().readByte();
 
-        Optional<FileHandle> FileHandle = session.getFileHandles()
-                .get(fileHandle);
+        FileHandle FileHandle = session.getFileHandles().get(fileHandle);
 
-        if (FileHandle.isPresent() && session.getFileDetails()
+        if (FileHandle != null && session.getFileDetails()
                 .containsKey(ConversionUtils.byteVal(fileHandle)))
         {
             int index = session.getFileDetailsIndex()
@@ -1134,10 +1173,8 @@ public class NHACPExtension implements ServerExtension
                 outgoingFrame.writeBytes(0x86);
 
                 // Write date time,
-                LocalDateTime now = LocalDateTime.ofInstant(
-                        file.getModified().toInstant(), ZoneId.systemDefault());
-                String date = dateFormatter.format(now);
-                String time = timeFormatter.format(now);
+                String date = dateFormatter.format(file.getModified());
+                String time = timeFormatter.format(file.getModified());
                 outgoingFrame.writeBytes(date.getBytes());
                 outgoingFrame.writeBytes(time.getBytes());
 
@@ -1181,7 +1218,7 @@ public class NHACPExtension implements ServerExtension
     public void remove(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         // Get the flags, but throw them away
         frame.getMemoryStream().readShort();
@@ -1206,7 +1243,7 @@ public class NHACPExtension implements ServerExtension
     public void rename(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         // get the filename Length
         int fileNameLen = frame.getMemoryStream().readByte();
@@ -1235,7 +1272,7 @@ public class NHACPExtension implements ServerExtension
     public void mkdir(NHACPFrame frame) throws Exception
     {
         // Get the Session
-        NHACPSession session = this.sessions.get(frame.getSessionId()).get();
+        NHACPSession session = this.sessions.get(frame.getSessionId());
 
         ByteOutputStreamHolder outgoingFrame = ByteOutputStreamHolder
                 .newStream();
@@ -1250,7 +1287,7 @@ public class NHACPExtension implements ServerExtension
 
         try
         {
-            Files.createDirectory(Paths.get(directoryName));
+            (new File(directoryName)).mkdir();
         }
         catch (Exception e)
         {
@@ -1276,7 +1313,7 @@ public class NHACPExtension implements ServerExtension
         }
         else if (this.sessions.containsKey(frame.getSessionId()))
         {
-            this.sessions.put(frame.getSessionId(), Optional.empty());
+            this.sessions.put(frame.getSessionId(), null);
         }
     }
 
@@ -1287,11 +1324,11 @@ public class NHACPExtension implements ServerExtension
      */
     private void initialize()
     {
-        this.sessions = new HashMap<Integer, Optional<NHACPSession>>();
+        this.sessions = new HashMap<Integer, NHACPSession>();
 
         for (int b = 0; b <= ConversionUtils.MAX_BYTE_VALUE; b++)
         {
-            this.sessions.put(b, Optional.empty());
+            this.sessions.put(b, null);
         }
     }
 
@@ -1316,15 +1353,18 @@ public class NHACPExtension implements ServerExtension
             calculatedPath = path;
         }
 
-        Optional<String> extension = Optional.ofNullable(calculatedPath)
-                .filter(f -> f.contains("."))
-                .map(f -> f.substring(calculatedPath.lastIndexOf(".") + 1));
-        if (!extension.isPresent() || !Settings.allowedExtensions
-                .contains(extension.get().toLowerCase()))
+        int extensionIndex = calculatedPath.lastIndexOf('.');
+        String extension = null;
+        if (extensionIndex > 0)
+        {
+            extension = calculatedPath.substring(extensionIndex + 1);
+        }
+        if (extension == null || !Settings.allowedExtensions
+                .contains(extension.toLowerCase()))
         {
             logger.error(
-                    "NABU requested a file extension which is not allowed: {}",
-                    path);
+                    "NABU requested a file extension which is not allowed: "
+                            + path);
         }
 
         return calculatedPath;

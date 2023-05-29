@@ -1,7 +1,6 @@
 package com.lenderman.nabu.adapter.model.nhacp;
 
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
 import com.lenderman.nabu.adapter.server.ServerInputOutputController;
 import com.lenderman.nabu.adapter.stream.InputStreamHolder;
 
@@ -94,8 +93,15 @@ public class NHACPFrame
             // Now, read the frame
             byte[] data = sioc.getIs().readBytes(length);
             this.opCode = data[0];
-            memoryStream = new InputStreamHolder(new ByteArrayInputStream(
-                    Arrays.copyOfRange(data, 1, data.length)));
+
+            byte[] remaining = new byte[data.length - 1];
+            for (int i = 0; i < data.length - 1; i++)
+            {
+                remaining[i] = data[i + 1];
+            }
+
+            memoryStream = new InputStreamHolder(
+                    new ByteArrayInputStream(remaining));
         }
     }
 }

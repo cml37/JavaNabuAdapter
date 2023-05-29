@@ -25,11 +25,19 @@ package com.lenderman.nabu.adapter.connection;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import com.fazecast.jSerialComm.SerialPort;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.model.settings.Settings;
+import com.lenderman.nabu.adapter.stream.SerialPortInputStream;
+import com.lenderman.nabu.adapter.stream.SerialPortOutputStream;
+import jssc.SerialPort;
 
 public class SerialConnection implements Connection
 {
+    /**
+     * Class Logger
+     */
+    private static final Logger logger = Logger
+            .getLogger(SerialConnection.class);
 
     /**
      * The serial port instance
@@ -62,7 +70,6 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public InputStream getNabuInputStream()
     {
         return nabuInputStream;
@@ -71,7 +78,6 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public OutputStream getNabuOutputStream()
     {
         return nabuOutputStream;
@@ -80,45 +86,48 @@ public class SerialConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public boolean isConnected()
     {
-        return serialPort != null && serialPort.isOpen();
+        return serialPort != null && serialPort.isOpened();
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
     public void startServer() throws Exception
     {
-        this.serialPort = SerialPort.getCommPort(settings.getPort());
-        serialPort.setBaudRate(Integer.parseInt(settings.getBaudRate()));
-        serialPort.setNumStopBits(SerialPort.TWO_STOP_BITS);
-        serialPort.setParity(SerialPort.NO_PARITY);
-        serialPort.setNumDataBits(8);
-        serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0,
-                0);
-        serialPort.setDTR();
-        serialPort.setRTS();
-        serialPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);
+        this.serialPort = new SerialPort(settings.getPort());
 
         if (!serialPort.openPort())
         {
             throw new Exception(
                     "Serial port could not be opened: " + settings.getPort());
         }
-        this.nabuInputStream = serialPort.getInputStream();
-        this.nabuOutputStream = serialPort.getOutputStream();
+
+        serialPort.setParams(Integer.parseInt(settings.getBaudRate()),
+                SerialPort.DATABITS_8, SerialPort.STOPBITS_2,
+                SerialPort.PARITY_NONE);
+        serialPort.setDTR(true);
+        serialPort.setRTS(true);
+        serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
+
+        this.nabuInputStream = new SerialPortInputStream(serialPort);
+        this.nabuOutputStream = new SerialPortOutputStream(serialPort);
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
     public void stopServer()
     {
-        this.serialPort.closePort();
+        try
+        {
+            this.serialPort.closePort();
+        }
+        catch (Exception ex)
+        {
+            logger.error("Could not stop server", ex);
+        }
         serialPort = null;
     }
 }

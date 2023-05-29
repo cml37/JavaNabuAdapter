@@ -24,58 +24,83 @@ package com.lenderman.nabu.adapter.loader;
  */
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Optional;
-import org.apache.commons.io.IOUtils;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.model.settings.Settings;
 
 public class LocalLoader implements Loader
 {
     /**
+     * Class Logger
+     */
+    private static final Logger logger = Logger.getLogger(LocalLoader.class);
+
+    /**
      * {@inheritDoc}
      */
-    @Override
-    public Optional<byte[]> tryGetData(String path) throws Exception
+    public byte[] tryGetData(String path) throws Exception
     {
         if (path.equalsIgnoreCase(Settings.HeadlessBootLoader))
         {
-            return Optional.of(IOUtils.toByteArray(getClass().getClassLoader()
-                    .getResourceAsStream(Settings.HeadlessBootResource)));
+            InputStream stream = getClass().getClassLoader()
+                    .getResourceAsStream(Settings.HeadlessBootResource);
+            List<Byte> list = new ArrayList<Byte>();
+
+            int nRead;
+            byte[] data = new byte[4];
+
+            while ((nRead = stream.read(data, 0, data.length)) != -1)
+            {
+                for (int i = 0; i < nRead; i++)
+                    list.add(data[i]);
+            }
+            byte[] bytes = new byte[list.size()];
+
+            for (int i = 0; i < list.size(); i++)
+            {
+                bytes[i] = list.get(i);
+            }
+            return bytes;
         }
 
         try
         {
             File file = new File(path);
-            byte[] data = Files.readAllBytes(file.toPath());
-            return Optional.of(data);
+            byte[] bytes = new byte[(int) file.length()];
+            FileInputStream fis = new FileInputStream(file);
+            try
+            {
+                fis.read(bytes);
+            }
+            catch (Exception ex)
+            {
+                logger.error("Could not read file", ex);
+            }
+            fis.close();
+            return bytes;
         }
         catch (Exception ex)
         {
-            return Optional.empty();
+            logger.error("Issue handling file", ex);
+            return new byte[0];
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public Optional<String> tryGetDirectory(String path) throws Exception
+    public String tryGetDirectory(String path) throws Exception
     {
-        try
-        {
-            return Optional.of(Paths.get(path).getParent().toString());
-        }
-        catch (Exception ex)
-        {
-            return Optional.empty();
-        }
+        File file = new File(path);
+        return file.getParent();
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
     public String getPathSeparator()
     {
         return File.separator;

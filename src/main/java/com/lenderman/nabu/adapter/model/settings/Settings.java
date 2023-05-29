@@ -28,11 +28,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.loader.Loader;
 import com.lenderman.nabu.adapter.loader.LocalLoader;
 import com.lenderman.nabu.adapter.loader.WebLoader;
@@ -43,7 +41,7 @@ public class Settings
     /**
      * Class Logger
      */
-    private static final Logger logger = LogManager.getLogger(Settings.class);
+    private static final Logger logger = Logger.getLogger(Settings.class);
 
     /**
      * NABU Network headless config file
@@ -193,7 +191,7 @@ public class Settings
     /**
      * @return String current working directory
      */
-    public Optional<String> getWorkingDirectory() throws Exception
+    public String getWorkingDirectory() throws Exception
     {
         Loader loader;
 
@@ -280,11 +278,11 @@ public class Settings
             JAXBContext jaxbContext = JAXBContext.newInstance(Targets.class);
             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
             cycles = (Targets) jaxbUnmarshaller.unmarshal(stream);
-            logger.debug("Cycles loaded count: {}", cycles.getTargets().size());
+            logger.debug("Cycles loaded count: " + cycles.getTargets().size());
         }
         catch (Exception ex)
         {
-            logger.error("Error loading targets: {}", ex);
+            logger.error("Error loading targets", ex);
         }
     }
 
@@ -312,18 +310,12 @@ public class Settings
                 switch (parseState)
                 {
                 case mode:
-                    switch (argument.toLowerCase())
-                    {
-                    case "serial":
+                    if (argument.toLowerCase().equals("serial"))
                         this.operatingMode = OperatingMode.Serial;
-                        break;
-                    case "tcpip":
+                    else if (argument.toLowerCase().equals("tcpip"))
                         this.operatingMode = OperatingMode.TCPIP;
-                        break;
-                    default:
+                    else
                         this.DisplayHelp();
-                        break;
-                    }
 
                     parseState = ParseState.start;
                     break;
@@ -355,24 +347,16 @@ public class Settings
                     break;
 
                 case start:
-                    switch (argument.toLowerCase())
-                    {
-                    case "-mode":
+                    if (argument.toLowerCase().equals("-mode"))
                         parseState = ParseState.mode;
-                        break;
-                    case "-port":
+                    else if (argument.toLowerCase().equals("-port"))
                         parseState = ParseState.port;
-                        break;
-                    case "-askforchannel":
+                    else if (argument.toLowerCase().equals("-askforchannel"))
                         this.askForChannel = true;
-                        break;
-                    case "-path":
+                    else if (argument.toLowerCase().equals("-path"))
                         parseState = ParseState.path;
-                        break;
-                    default:
+                    else
                         this.DisplayHelp();
-                        break;
-                    }
                     break;
                 }
             }

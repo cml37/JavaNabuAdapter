@@ -23,10 +23,7 @@ package com.lenderman.nabu.adapter.model.file;
  * SOFTWARE.
  */
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
 import java.util.List;
 import com.lenderman.nabu.adapter.model.file.flags.FileFlagsNHACP.OpenFlagsNHACP;
 import com.lenderman.nabu.adapter.model.file.flags.FileFlagsRetroNet.OpenFlags;
@@ -80,24 +77,25 @@ public class FileHandle
         }
         else
         {
-            try
-            {
-                this.index = Math.min(Files.size(this.getFullFilename()),
-                        this.index);
-            }
-            catch (IOException e)
-            {
-                this.index = 0;
-            }
+            this.index = Math.min(this.getFileSize(), this.index);
         }
     }
 
     /**
-     * @return Path
+     * @return long
      */
-    public Path getFullFilename()
+    public long getFileSize()
     {
-        return Paths.get(this.workingDirectory, this.fileName);
+        return new File(this.workingDirectory + File.separator + this.fileName)
+                .length();
+    }
+
+    /**
+     * @return String
+     */
+    public String getFullFilename()
+    {
+        return this.workingDirectory + File.separator + this.fileName;
     }
 
     /**

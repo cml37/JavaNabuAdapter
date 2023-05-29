@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.model.packet.NabuPacket;
 import com.lenderman.nabu.adapter.model.packet.NabuSegment;
 import com.lenderman.nabu.adapter.utilities.CRC;
@@ -40,8 +39,7 @@ public class SegmentManager
     /**
      * Class Logger
      */
-    private static final Logger logger = LogManager
-            .getLogger(SegmentManager.class);
+    private static final Logger logger = Logger.getLogger(SegmentManager.class);
 
     /**
      * Create the time segment that the nabu can parse.
@@ -54,7 +52,7 @@ public class SegmentManager
 
         Calendar dateTime = Calendar.getInstance(TimeZone.getDefault());
 
-        List<Byte> list = new ArrayList<>();
+        List<Byte> list = new ArrayList<Byte>();
         list.add(ConversionUtils.byteVal(0x7F));
         list.add(ConversionUtils.byteVal(0xFF));
         list.add(ConversionUtils.byteVal(0xFF));
@@ -105,7 +103,7 @@ public class SegmentManager
     public static NabuSegment loadPackets(int segmentNumber, byte[] data)
             throws Exception
     {
-        logger.debug("Loading segment for {}", segmentNumber);
+        logger.debug("Loading segment for " + segmentNumber);
 
         if (data.length > 0xFFFFL)
         {
@@ -151,7 +149,7 @@ public class SegmentManager
     public static NabuSegment createPackets(int segmentNumber, byte[] data)
             throws Exception
     {
-        logger.debug("Creating segment for {}", segmentNumber);
+        logger.debug("Creating segment for " + segmentNumber);
 
         if (data.length > 0xFFFFL)
         {
@@ -197,10 +195,10 @@ public class SegmentManager
     private static List<Byte> createPacket(int segmentNumber, byte packetNumber,
             int offset, boolean lastSegment, byte[] data, int bytesRead)
     {
-        logger.debug("Creating segment for segment number {} at offset {}",
-                segmentNumber, offset);
+        logger.debug("Creating segment for segment number " + segmentNumber
+                + " at offset " + offset);
 
-        List<Byte> list = new ArrayList<>();
+        List<Byte> list = new ArrayList<Byte>();
 
         // Cobble together the header
         list.add(ConversionUtils.byteVal((int) (segmentNumber >> 16) & 0xFF));
@@ -260,7 +258,7 @@ public class SegmentManager
      */
     private static void validatePacket(List<Byte> packetData)
     {
-        List<Byte> data = new ArrayList<>(packetData.size() - 2);
+        List<Byte> data = new ArrayList<Byte>(packetData.size() - 2);
         data.addAll(packetData);
         data.remove(packetData.size() - 1);
         data.remove(packetData.size() - 2);
@@ -269,13 +267,15 @@ public class SegmentManager
         if (packetData.get(packetData.size() - 2) != crcData[0]
                 || packetData.get(packetData.size() - 1) != crcData[1])
         {
-            logger.warn("CRC Bad, Calculated {}, {} but read {}, {}",
-                    String.format("0x%02x", ((int) crcData[0] & 0xff)),
-                    String.format("0x%02x", ((int) crcData[1] & 0xff)),
-                    String.format("0x%02x",
+            logger.error("CRC Bad, Calculated "
+                    + String.format("0x%02x", ((int) crcData[0] & 0xff)) + ", "
+                    + String.format("0x%02x", ((int) crcData[1] & 0xff))
+                    + " but read "
+                    + String.format("0x%02x",
                             ((int) packetData.get(packetData.size() - 2)
-                                    & 0xff)),
-                    String.format("0x%02x",
+                                    & 0xff))
+                    + " "
+                    + String.format("0x%02x",
                             ((int) packetData.get(packetData.size() - 1)
                                     & 0xff)));
 

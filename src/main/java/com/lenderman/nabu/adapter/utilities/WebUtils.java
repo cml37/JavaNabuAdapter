@@ -2,6 +2,15 @@ package com.lenderman.nabu.adapter.utilities;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.SecureRandom;
+import java.security.Security;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import com.lenderman.nabu.adapter.loader.LocalLoader;
 import com.lenderman.nabu.adapter.model.settings.Settings;
 
 /*
@@ -29,6 +38,28 @@ import com.lenderman.nabu.adapter.model.settings.Settings;
 public class WebUtils
 {
     /**
+     * Class Logger
+     */
+    private static final Logger logger = Logger.getLogger(LocalLoader.class);
+
+    // Bring in BouncyCastle and disable hostname verification for known URLs
+    static
+    {
+        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        javax.net.ssl.HttpsURLConnection
+                .setDefaultHostnameVerifier(new javax.net.ssl.HostnameVerifier()
+                {
+
+                    public boolean verify(String hostname,
+                            javax.net.ssl.SSLSession sslSession)
+                    {
+                        return Settings.allowedUri.contains(hostname);
+                    }
+                });
+    }
+
+    /**
      * Helper method to open a Web Client
      * 
      * @param String url
@@ -42,6 +73,7 @@ public class WebUtils
         webClient.addRequestProperty("Content-Type",
                 "application/octet-stream");
         webClient.addRequestProperty("Content-Transfer-Encoding", "binary");
+        ((HttpsURLConnection) webClient).setSSLSocketFactory(getFactory());
         return webClient;
     }
 
@@ -68,5 +100,26 @@ public class WebUtils
             return false;
         }
     }
-}
 
+    /**
+     * Get a "latest TLS protocol" compatible factory
+     * 
+     * @param String URI to validate
+     * @return true if allowed URL
+     */
+    private static SSLSocketFactory getFactory()
+    {
+        SSLContext clientContext;
+        try
+        {
+            clientContext = SSLContext.getInstance("TLS");
+            clientContext.init(null, null, new SecureRandom());
+            return clientContext.getSocketFactory();
+        }
+        catch (Exception e)
+        {
+            logger.error("Could not get SSL factory", e);
+        }
+        return null;
+    }
+}

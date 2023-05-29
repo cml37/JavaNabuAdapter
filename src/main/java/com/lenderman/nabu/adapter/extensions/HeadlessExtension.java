@@ -23,14 +23,11 @@ package com.lenderman.nabu.adapter.extensions;
  * SOFTWARE.
  */
 
+import java.io.File;
 import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.model.settings.Settings;
 import com.lenderman.nabu.adapter.model.settings.Target;
 import com.lenderman.nabu.adapter.model.settings.Target.TargetEnum;
@@ -42,7 +39,7 @@ public class HeadlessExtension implements ServerExtension
     /**
      * Class Logger
      */
-    private static final Logger logger = LogManager
+    private static final Logger logger = Logger
             .getLogger(HeadlessExtension.class);
 
     /**
@@ -76,7 +73,6 @@ public class HeadlessExtension implements ServerExtension
     /**
      * Reset the extension
      */
-    @Override
     public void reset()
     {
         // Do nothing
@@ -89,7 +85,6 @@ public class HeadlessExtension implements ServerExtension
      * @param int opCode
      * @return true if we acted on this opCode, false otherwise.
      */
-    @Override
     public boolean tryProcessCommand(int opCode)
     {
         try
@@ -116,7 +111,7 @@ public class HeadlessExtension implements ServerExtension
         }
         catch (Exception ex)
         {
-            logger.error("Could not process command: ", ex);
+            logger.error("Could not process command", ex);
         }
 
         // Op code not serviced by this extension
@@ -148,25 +143,44 @@ public class HeadlessExtension implements ServerExtension
         switch (menu)
         {
         case 1:
-            names = cycles.stream()
-                    .filter(t -> t.getTargetType() == TargetEnum.NabuNetwork)
-                    .map(Target::getName).collect(Collectors.toList());
+            for (Target cycle : cycles)
+            {
+                if (cycle.getTargetType() == TargetEnum.NabuNetwork)
+                {
+                    names.add(cycle.getName());
+                }
+            }
             break;
         case 2:
-            names = cycles.stream()
-                    .filter(t -> t.getTargetType() == TargetEnum.Homebrew)
-                    .map(Target::getName).sorted().collect(Collectors.toList());
+            for (Target cycle : cycles)
+            {
+                if (cycle.getTargetType() == TargetEnum.Homebrew)
+                {
+                    names.add(cycle.getName());
+                }
+            }
             break;
         case 3:
-            names = cycles.stream()
-                    .filter(t -> t.getTargetType() == TargetEnum.Gameroom)
-                    .map(Target::getName).sorted().collect(Collectors.toList());
+            for (Target cycle : cycles)
+            {
+                if (cycle.getTargetType() == TargetEnum.Gameroom)
+                {
+                    names.add(cycle.getName());
+                }
+            }
             break;
         }
 
         String name = names.get(menuItem);
-        Target selected = cycles.stream().filter(t -> t.getName().equals(name))
-                .findFirst().get();
+        Target selected = null;
+        for (Target cycle : cycles)
+        {
+            if (cycle.getName().equals(name))
+            {
+                selected = cycle;
+                break;
+            }
+        }
         this.server.resetCycle(selected.getUrl());
     }
 
@@ -199,13 +213,14 @@ public class HeadlessExtension implements ServerExtension
         {
             // two things about headless - First, must be in the current working
             // directory and must either be a directory or .nabu
-            Path fullPath = Paths.get(System.getProperty("user.dir"), path);
-            if (fullPath.toFile().exists() && !fullPath.toFile().isDirectory()
+            File fullPath = new File(
+                    System.getProperty("user.dir") + File.separator + path);
+            if (fullPath.exists() && !fullPath.isDirectory()
                     && (path.toLowerCase().endsWith("")
                             || path.toLowerCase().endsWith(".nabu")
                             || path.toLowerCase().endsWith(".pak")))
             {
-                logger.debug("Valid path: {}", fullPath.toString());
+                logger.debug("Valid path: " + fullPath.toString());
                 server.resetCycle(fullPath.toString());
             }
         }
@@ -227,19 +242,31 @@ public class HeadlessExtension implements ServerExtension
             names = Settings.topLevelHeadlessMenu;
             break;
         case 1:
-            names = cycles.stream()
-                    .filter(t -> t.getTargetType() == TargetEnum.NabuNetwork)
-                    .map(Target::getName).collect(Collectors.toList());
+            for (Target cycle : cycles)
+            {
+                if (cycle.getTargetType() == TargetEnum.NabuNetwork)
+                {
+                    names.add(cycle.getName());
+                }
+            }
             break;
         case 2:
-            names = cycles.stream()
-                    .filter(t -> t.getTargetType() == TargetEnum.Homebrew)
-                    .map(Target::getName).sorted().collect(Collectors.toList());
+            for (Target cycle : cycles)
+            {
+                if (cycle.getTargetType() == TargetEnum.Homebrew)
+                {
+                    names.add(cycle.getName());
+                }
+            }
             break;
         case 3:
-            names = cycles.stream()
-                    .filter(t -> t.getTargetType() == TargetEnum.Gameroom)
-                    .map(Target::getName).sorted().collect(Collectors.toList());
+            for (Target cycle : cycles)
+            {
+                if (cycle.getTargetType() == TargetEnum.Gameroom)
+                {
+                    names.add(cycle.getName());
+                }
+            }
             break;
         }
         return names;

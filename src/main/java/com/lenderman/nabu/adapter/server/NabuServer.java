@@ -2,14 +2,11 @@ package com.lenderman.nabu.adapter.server;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.connection.Connection;
 import com.lenderman.nabu.adapter.connection.SerialConnection;
 import com.lenderman.nabu.adapter.connection.TcpConnection;
-import com.lenderman.nabu.adapter.extensions.FileStoreExtensions;
 import com.lenderman.nabu.adapter.extensions.HeadlessExtension;
 import com.lenderman.nabu.adapter.extensions.NHACPExtension;
 import com.lenderman.nabu.adapter.extensions.ServerExtension;
@@ -28,7 +25,7 @@ public class NabuServer
     /**
      * Class Logger
      */
-    private static final Logger logger = LogManager.getLogger(NabuServer.class);
+    private static final Logger logger = Logger.getLogger(NabuServer.class);
 
     /**
      * Server settings
@@ -87,7 +84,6 @@ public class NabuServer
         sioc = new ServerInputOutputController(connection);
 
         this.extensions = new ArrayList<ServerExtension>();
-        this.extensions.add(new FileStoreExtensions(sioc, settings));
         this.extensions.add(new HeadlessExtension(this, sioc, settings));
         this.extensions.add(new NHACPExtension(sioc, settings));
     }
@@ -109,7 +105,7 @@ public class NabuServer
      */
     public void runServer()
     {
-        logger.info("Listening for NABU");
+        logger.debug("Listening for NABU");
 
         // Start the server first, but if we hit an exception, terminate
         try
@@ -137,7 +133,7 @@ public class NabuServer
                     sioc.getOs().writeBytes(0x10, 0x6);
                     int channel = sioc.getIs().readByte()
                             + (sioc.getIs().readByte() << 8);
-                    logger.debug("Received Channel {}", channel);
+                    logger.debug("Received Channel " + channel);
                     sioc.getOs().writeBytes(0xE4);
                     break;
                 case 0x84: // File Transfer
@@ -181,8 +177,8 @@ public class NabuServer
 
                     if (!completed)
                     {
-                        logger.error("Unknown command 0x{}",
-                                String.format("%02x", b));
+                        logger.error("Unknown command 0x"
+                                + String.format("%02x", b));
                         sioc.getOs().writeBytes(0x10, 0x6);
                     }
                 }
@@ -217,17 +213,20 @@ public class NabuServer
         int segmentNumber = sioc.getRequestedSegment();
 
         String segmentName = String.format("%06x", segmentNumber).toUpperCase();
-        logger.debug("NABU requesting segment {} and packet {}",
-                String.format("%06x", segmentNumber),
-                String.format("%06x", packetNumber));
+        logger.debug("NABU requesting segment "
+                + String.format("%06x", segmentNumber) + " and packet "
+                + String.format("%06x", packetNumber));
 
         // ok
         sioc.getOs().writeBytes(0xE4);
-        Optional<NabuSegment> segment;
+        NabuSegment segment;
 
         if (segmentNumber == 0x1 && packetNumber == 0x0)
         {
-            extensions.forEach(ServerExtension::reset);
+            for (ServerExtension extension : extensions)
+            {
+                extension.reset();
+            }
 
             if (settings
                     .getSourceLocation() == Settings.SourceLocation.Headless)
@@ -257,7 +256,7 @@ public class NabuServer
 
         if (segmentNumber == 0x7FFFFF)
         {
-            segment = Optional.of(SegmentManager.createTimeSegment());
+            segment = SegmentManager.createTimeSegment();
         }
         else
         {
@@ -275,93 +274,93 @@ public class NabuServer
 
             if (cache.containsKey(segmentNumber))
             {
-                segment = Optional.of(cache.get(segmentNumber));
+                segment = cache.get(segmentNumber);
             }
             else
             {
-                segment = Optional.empty();
+                segment = null;
             }
 
-            if (!segment.isPresent())
+            if (segment == null)
             {
-                Optional<byte[]> data;
+                byte[] data;
                 // if the path ends with .nabu:
                 if (this.settings.getPath().toLowerCase().endsWith(".nabu")
                         && segmentNumber == 1)
                 {
                     data = loader.tryGetData(this.settings.getPath());
-                    if (data.isPresent())
+                    if (data.length > 0)
                     {
-                        logger.debug("Loading NABU segment {} from {}",
-                                String.format("%06x", segmentNumber),
-                                this.settings.getPath());
-                        segment = Optional.of(SegmentManager
-                                .createPackets(segmentNumber, data.get()));
+                        logger.debug("Loading NABU segment "
+                                + String.format("%06x", segmentNumber)
+                                + " from " + this.settings.getPath());
+                        segment = SegmentManager.createPackets(segmentNumber,
+                                data);
                     }
                 }
                 else if (this.settings.getPath().toLowerCase().endsWith(".pak")
                         && segmentNumber == 1)
                 {
                     data = loader.tryGetData(this.settings.getPath());
-                    if (data.isPresent())
+                    if (data.length > 0)
                     {
-                        logger.debug("Creating NABU segment {} from {}",
-                                String.format("%06x", segmentNumber),
-                                this.settings.getPath());
-                        segment = Optional.of(SegmentManager
-                                .loadPackets(segmentNumber, data.get()));
+                        logger.debug("Creating NABU segment "
+                                + String.format("%06x", segmentNumber)
+                                + " from " + this.settings.getPath());
+                        segment = SegmentManager.loadPackets(segmentNumber,
+                                data);
                     }
                 }
                 else
                 {
-                    Optional<String> directory = loader
+                    String directory = loader
                             .tryGetDirectory(this.settings.getPath());
 
-                    if (directory.isPresent())
+                    if (directory != null)
                     {
-                        String segmentFullPath = directory.get()
+                        String segmentFullPath = directory
                                 + loader.getPathSeparator() + segmentName
                                 + ".nabu";
                         data = loader.tryGetData(segmentFullPath);
-                        if (data.isPresent())
+                        if (data.length > 0)
                         {
-                            logger.debug("Creating NABU segment {} from {}",
-                                    String.format("%06x", segmentNumber),
-                                    segmentFullPath);
-                            segment = Optional.of(SegmentManager
-                                    .createPackets(segmentNumber, data.get()));
+                            logger.debug("Creating NABU segment "
+                                    + String.format("%06x", segmentNumber)
+                                    + " from " + segmentFullPath);
+                            segment = SegmentManager
+                                    .createPackets(segmentNumber, data);
                         }
                         else
                         {
-                            String pakFullPath = directory.get()
+                            String pakFullPath = directory
                                     + loader.getPathSeparator() + segmentName
                                     + ".pak";
-                            logger.debug("Loading NABU segment {} from {}",
-                                    String.format("%06x", segmentNumber),
-                                    pakFullPath);
-                            segment = Optional.of(SegmentManager
-                                    .loadPackets(segmentNumber, data.get()));
+                            logger.debug("Loading NABU segment "
+                                    + String.format("%06x", segmentNumber
+                                            + " from" + pakFullPath));
+                            segment = SegmentManager.loadPackets(segmentNumber,
+                                    data);
                         }
                     }
                 }
 
-                if (!segment.isPresent())
+                if (segment == null)
                 {
                     if (settings
                             .getSourceLocation() == Settings.SourceLocation.Headless)
                     {
-                        logger.warn(
+                        logger.error(
                                 "Could not load requested headless target, reloading menu");
 
                         loader = new LocalLoader();
                         data = loader.tryGetData(Settings.HeadlessBootLoader);
-                        if (data.isPresent())
+                        if (data.length > 0)
                         {
-                            segment = Optional.of(SegmentManager
-                                    .createPackets(segmentNumber, data.get()));
+                            segment = SegmentManager
+                                    .createPackets(segmentNumber, data);
                         }
 
-                        cache.put(segmentNumber, segment.get());
+                        cache.put(segmentNumber, segment);
                     }
                     else
                     {
@@ -381,14 +380,13 @@ public class NabuServer
                 }
                 else
                 {
-                    cache.put(segmentNumber, segment.get());
+                    cache.put(segmentNumber, segment);
                 }
             }
         }
 
         // Send the requested segment of the pack
-        if (segment.isPresent()
-                && packetNumber <= segment.get().getPackets().size())
+        if (segment != null && packetNumber <= segment.getPackets().size())
         {
             sioc.getOs().writeBytes(0x91);
             int b = sioc.getIs().readByte();
@@ -399,7 +397,7 @@ public class NabuServer
             }
 
             sioc.getIs().readByte(0x6);
-            sioc.sendPacket(segment.get().getPackets().get(packetNumber));
+            sioc.sendPacket(segment.getPackets().get(packetNumber));
             sioc.getOs().writeBytes(0x10, 0xE1);
         }
     }

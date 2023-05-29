@@ -22,9 +22,8 @@ package com.lenderman.nabu.adapter.utilities;
  * SOFTWARE.
  */
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class ConversionUtils
 {
@@ -74,7 +73,11 @@ public class ConversionUtils
      */
     public static List<Byte> convertToByteList(byte[] byteArray)
     {
-        return IntStream.range(0, byteArray.length).mapToObj(i -> byteArray[i])
-                .collect(Collectors.toList());
+        List<Byte> byteList = new ArrayList<Byte>();
+        for (int i = 0; i < byteArray.length; i++)
+        {
+            byteList.add(byteArray[i]);
+        }
+        return byteList;
     }
 }

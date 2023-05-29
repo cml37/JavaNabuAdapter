@@ -2,7 +2,6 @@ package com.lenderman.nabu.adapter.model.nhacp;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import com.lenderman.nabu.adapter.model.file.FileDetails;
 import com.lenderman.nabu.adapter.model.file.FileHandle;
 import com.lenderman.nabu.adapter.utilities.ConversionUtils;
@@ -56,7 +55,7 @@ public class NHACPSession
      * We keep track of the file handles opened by NABU with a quick dictionary
      * lookup
      */
-    private HashMap<Integer, Optional<FileHandle>> fileHandles;
+    private HashMap<Integer, FileHandle> fileHandles;
 
     /**
      * @return HashMap<Byte, Integer>
@@ -85,7 +84,7 @@ public class NHACPSession
     /**
      * @return HashMap<Integer, Optional<FileHandle>>
      */
-    public HashMap<Integer, Optional<FileHandle>> getFileHandles()
+    public HashMap<Integer, FileHandle> getFileHandles()
     {
         return fileHandles;
     }
@@ -98,13 +97,13 @@ public class NHACPSession
         this.settings = settings;
         this.fileDetails = new HashMap<Byte, List<FileDetails>>();
         this.fileDetailsIndex = new HashMap<Byte, Integer>();
-        this.fileHandles = new HashMap<Integer, Optional<FileHandle>>();
+        this.fileHandles = new HashMap<Integer, FileHandle>();
 
         // Just make sure that all the file handles are set to null (unused) -
         // this is a just in case
         for (int b = 0; b <= ConversionUtils.MAX_BYTE_VALUE; b++)
         {
-            this.fileHandles.put(b, Optional.empty());
+            this.fileHandles.put(b, null);
         }
     }
 }

@@ -23,9 +23,7 @@ package com.lenderman.nabu.adapter.model.file;
  * SOFTWARE.
  */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.io.File;
 import java.util.Calendar;
 import com.lenderman.nabu.adapter.utilities.ConversionUtils;
 
@@ -112,14 +110,12 @@ public class FileDetails
     /**
      * Constructor
      */
-    public FileDetails(Path path) throws Exception
+    public FileDetails(String path) throws Exception
     {
-        BasicFileAttributes attr = Files.readAttributes(path,
-                BasicFileAttributes.class);
+        File file = new File(path);
+        // For Java 5, we will just use current time
         this.created = Calendar.getInstance();
-        this.created.setTimeInMillis(attr.creationTime().toMillis());
-        this.modified = Calendar.getInstance();
-        this.modified.setTimeInMillis(attr.lastModifiedTime().toMillis());
+        this.modified = created;
 
         if (path.toString().trim().length() == 0)
         {
@@ -130,8 +126,8 @@ public class FileDetails
             this.fileName = path.toString().trim();
         }
 
-        this.fileSize = attr.isDirectory() ? -1 : attr.size();
-        this.fileType = attr.isDirectory() ? FileType.Directory : FileType.File;
+        this.fileSize = file.isDirectory() ? -1 : file.length();
+        this.fileType = file.isDirectory() ? FileType.Directory : FileType.File;
     }
 
     /**

@@ -96,7 +96,7 @@ public class NabuPacket
             {
                 escapedData.add(0x10);
             }
-            escapedData.add(Byte.toUnsignedInt(b));
+            escapedData.add(b & 0xff);
         }
         return escapedData;
     }

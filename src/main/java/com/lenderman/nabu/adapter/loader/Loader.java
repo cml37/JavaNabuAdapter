@@ -23,25 +23,23 @@ package com.lenderman.nabu.adapter.loader;
  * SOFTWARE.
  */
 
-import java.util.Optional;
-
 public interface Loader
 {
     /**
      * Try to get the data
      * 
      * @param String path
-     * @return Optional<byte[]>
+     * @return byte[]
      */
-    public Optional<byte[]> tryGetData(String path) throws Exception;
+    public byte[] tryGetData(String path) throws Exception;
 
     /**
      * Try to get the containing directory of the specified file
      * 
      * @param String path
-     * @return Optional<String>
+     * @return String
      */
-    public Optional<String> tryGetDirectory(String path) throws Exception;
+    public String tryGetDirectory(String path) throws Exception;
 
     /**
      * Return the path separator assocated with this loader

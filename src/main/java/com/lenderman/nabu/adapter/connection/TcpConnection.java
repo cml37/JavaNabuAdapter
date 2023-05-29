@@ -28,8 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import com.lenderman.nabu.adapter.model.settings.Settings;
 
 public class TcpConnection implements Connection
@@ -37,8 +36,7 @@ public class TcpConnection implements Connection
     /**
      * Class Logger
      */
-    private static final Logger logger = LogManager
-            .getLogger(TcpConnection.class);
+    private static final Logger logger = Logger.getLogger(TcpConnection.class);
 
     /**
      * Program settings
@@ -66,7 +64,6 @@ public class TcpConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public InputStream getNabuInputStream()
     {
         try
@@ -82,7 +79,6 @@ public class TcpConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public OutputStream getNabuOutputStream()
     {
         try
@@ -98,7 +94,6 @@ public class TcpConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public boolean isConnected()
     {
         return socket != null && socket.isConnected();
@@ -107,7 +102,6 @@ public class TcpConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public void startServer() throws Exception
     {
         serverSocket = new ServerSocket(
@@ -122,7 +116,6 @@ public class TcpConnection implements Connection
     /**
      * {@inheritDoc}
      */
-    @Override
     public void stopServer()
     {
         try

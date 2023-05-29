@@ -67,7 +67,7 @@ public class FileFlagsNHACP
                 //
                 // To address this bit pattern, we need to adjust our "zero
                 // test" by ANDing the bottom three bits first
-                if (ap.getValue() == 0 && (val & 0b0111) == 0)
+                if (ap.getValue() == 0 && (val & 0x07) == 0)
                 {
                     list.add(ap);
                 }

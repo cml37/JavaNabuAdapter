@@ -25,10 +25,8 @@ package com.lenderman.nabu.adapter.utilities;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,12 +59,13 @@ public class StreamUtils
     public static void writeBytes(OutputStream stream, Integer... bytes)
             throws Exception
     {
-        BufferedOutputStream bos = new BufferedOutputStream(stream);
+        byte[] output = new byte[bytes.length];
+        int counter = 0;
         for (Integer i : bytes)
         {
-            bos.write(i.byteValue());
+            output[counter++] = (byte) (i & 0xff);
         }
-        bos.flush();
+        stream.write(output);
     }
 
     /**
@@ -75,12 +74,7 @@ public class StreamUtils
     public static void writeBytes(OutputStream stream, byte[] bytes)
             throws Exception
     {
-        BufferedOutputStream bos = new BufferedOutputStream(stream);
-        for (byte i : bytes)
-        {
-            bos.write(i);
-        }
-        bos.flush();
+        stream.write(bytes);
     }
 
     /**
@@ -155,8 +149,7 @@ public class StreamUtils
     public static int readShort(InputStream stream) throws Exception
     {
         byte[] buffer = new byte[8];
-        DataInputStream dis = new DataInputStream(stream);
-        dis.readFully(buffer, 0, 2);
+        stream.read(buffer, 0, 2);
         return ((buffer[1] & 0xff) << 8 | (buffer[0] & 0xff));
     }
 
@@ -168,12 +161,11 @@ public class StreamUtils
     public static long readInt(InputStream stream) throws Exception
     {
         byte[] buffer = new byte[8];
-        DataInputStream dis = new DataInputStream(stream);
-        dis.readFully(buffer, 0, 4);
+        stream.read(buffer, 0, 4);
         int intval = ((buffer[1] & 0xff) << 8 | (buffer[0] & 0xff))
                 | (buffer[2] & 0xff) << 16 | (buffer[3] & 0xff) << 24;
 
-        long val = Integer.toUnsignedLong(intval);
+        long val = intval & 0x00000000ffffffffL;
         return val;
     }
 
@@ -192,7 +184,7 @@ public class StreamUtils
         {
             buf.write((byte) bis.read());
         }
-        return buf.toString(StandardCharsets.US_ASCII.displayName());
+        return buf.toString();
     }
 
     /**

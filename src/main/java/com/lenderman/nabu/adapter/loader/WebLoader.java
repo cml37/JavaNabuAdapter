@@ -23,10 +23,9 @@ package com.lenderman.nabu.adapter.loader;
  * SOFTWARE.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URLConnection;
-import java.util.Optional;
-import java.io.ByteArrayOutputStream;
 import com.lenderman.nabu.adapter.utilities.WebUtils;
 
 public class WebLoader implements Loader
@@ -34,8 +33,7 @@ public class WebLoader implements Loader
     /**
      * {@inheritDoc}
      */
-    @Override
-    public Optional<byte[]> tryGetData(String path) throws Exception
+    public byte[] tryGetData(String path) throws Exception
     {
         URLConnection connection = WebUtils.openWebClient(path);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -46,14 +44,13 @@ public class WebLoader implements Loader
             buffer.write(bytes, 0, len);
         }
         buffer.close();
-        return (Optional.of(buffer.toByteArray()));
+        return (buffer.toByteArray());
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public Optional<String> tryGetDirectory(String path) throws Exception
+    public String tryGetDirectory(String path) throws Exception
     {
         String directoryPath = "";
 
@@ -82,18 +79,17 @@ public class WebLoader implements Loader
                 directoryPath = path.replaceAll("/$", "");
             }
 
-            return Optional.of(directoryPath);
+            return directoryPath;
         }
         catch (Exception ex)
         {
-            return Optional.empty();
+            return null;
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
     public String getPathSeparator()
     {
         return "/";
