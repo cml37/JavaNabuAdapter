@@ -149,7 +149,8 @@ public class StreamUtils
     public static int readShort(InputStream stream) throws Exception
     {
         byte[] buffer = new byte[8];
-        stream.read(buffer, 0, 2);
+        buffer[0] = (byte) (stream.read() & 0xff);
+        buffer[1] = (byte) (stream.read() & 0xff);
         return ((buffer[1] & 0xff) << 8 | (buffer[0] & 0xff));
     }
 
@@ -161,7 +162,10 @@ public class StreamUtils
     public static long readInt(InputStream stream) throws Exception
     {
         byte[] buffer = new byte[8];
-        stream.read(buffer, 0, 4);
+        buffer[0] = (byte) (stream.read() & 0xff);
+        buffer[1] = (byte) (stream.read() & 0xff);
+        buffer[2] = (byte) (stream.read() & 0xff);
+        buffer[3] = (byte) (stream.read() & 0xff);
         int intval = ((buffer[1] & 0xff) << 8 | (buffer[0] & 0xff))
                 | (buffer[2] & 0xff) << 16 | (buffer[3] & 0xff) << 24;
 

@@ -491,8 +491,10 @@ public class NHACPExtension implements ServerExtension
             }
 
             FileOutputStream outputStream = new FileOutputStream(
-                    new File(FileHandle.getFileName()));
+                    new File(FileHandle.getFullFilename()));
             outputStream.write(bytes2);
+			outputStream.close();
+
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
                     outgoingFrame.getBytes());
@@ -709,8 +711,9 @@ public class NHACPExtension implements ServerExtension
                 bytes2[i] = bytes[i];
             }
             FileOutputStream outputStream = new FileOutputStream(
-                    new File(FileHandle.getFileName()));
+                    new File(FileHandle.getFullFilename()));
             outputStream.write(bytes2);
+            outputStream.close();
 
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
@@ -847,8 +850,9 @@ public class NHACPExtension implements ServerExtension
                 bytes2[i] = bytes[i];
             }
             FileOutputStream outputStream = new FileOutputStream(
-                    new File(FileHandle.getFileName()));
+                    new File(FileHandle.getFullFilename()));
             outputStream.write(bytes2);
+            outputStream.close();
 
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
@@ -1057,8 +1061,9 @@ public class NHACPExtension implements ServerExtension
                 bytes2[i] = bytes[i];
             }
             FileOutputStream outputStream = new FileOutputStream(
-                    new File(FileHandle.getFileName()));
+                    new File(FileHandle.getFullFilename()));
             outputStream.write(bytes2);
+            outputStream.close();
 
             outgoingFrame.writeBytes(0x81);
             this.writeFrame(session.getSettings().isCrc(),
