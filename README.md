@@ -1,5 +1,6 @@
 # JavaNabuAdapter
 Java 5 version of https://github.com/nabunetwork/Adaptor
+
 WARNING: Java 5 is ancient, but so is Windows '98, which is the target OS for running this software version.  Proceed at your own risk!!
 
 # Deficiencies 
@@ -9,8 +10,11 @@ WARNING: Java 5 is ancient, but so is Windows '98, which is the target OS for ru
 * Better deployment process (creating an executable JAR that extracts all libraries into it results in SSL handshake failures)
 
 # Building
-Use Eclipse to build against a Java 5 JDK.  Then export a runnable JAR file called `JavaNabuAdapter.jar`.  For library handling, copy required libraries into a sub-folder next to the generated JAR
-You will need to find the following libraries and place them in the lib directory:
+Use Eclipse to build against a Java 5 JDK.  
+
+Then export a runnable JAR file called `JavaNabuAdapter.jar`. For library handling, copy required libraries into a sub-folder next to the generated JAR
+
+Prior to doing the above, you will need to find the following libraries and place them in the lib directory:
 * activation-1.1.1.jar (`javax.activation:activation:1.1.1`)
 * bcprov-jdk15to18-173.jar (`org.bouncycastle:bcprov-jdk15to18:1.73`)
 * bctls-jdk15to18-173.jar (`org.bouncycastle:bctls-jdk15to18:1.73`)
