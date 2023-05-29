@@ -76,6 +76,84 @@
 	<build>
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
+			<!-- Remove CPM artifacts on mvn clean -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>cpm</directory>
+							<includes>
+								<include>**/*</include>
+							</includes>
+							<followSymlinks>false</followSymlinks>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			<!-- Download CPM artifacts -->
+			<plugin>
+				<groupId>com.googlecode.maven-download-plugin</groupId>
+				<artifactId>download-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>download-1</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>https://www.nabunetwork.com/cpm/CPM22.SYS</url>
+							<outputDirectory>${project.basedir}/cpm</outputDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>download-2</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>https://www.nabunetwork.com/cpm/FONT.GRB</url>
+							<outputDirectory>${project.basedir}/cpm</outputDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>download-3</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>https://www.nabunetwork.com/cpm/NDSK_A.IMG</url>
+							<outputDirectory>${project.basedir}/cpm</outputDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>download-4</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>https://www.nabunetwork.com/cpm/NDSK_B.IMG</url>
+							<outputDirectory>${project.basedir}/cpm</outputDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>download-5</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>https://www.nabunetwork.com/cpm/NDSK_BOOT.nabu</url>
+							<outputDirectory>${project.basedir}/cpm</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Create a directory for JAR dependencies that will live alongside the executable JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -94,6 +172,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- Compiler Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -102,6 +181,7 @@
 					<target>1.5</target>
 				</configuration>
 			</plugin>
+			<!-- Plugin to create executable JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
