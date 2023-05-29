@@ -105,7 +105,7 @@ public class NabuServer
      */
     public void runServer()
     {
-        logger.debug("Listening for NABU");
+        logger.info("Listening for NABU");
 
         // Start the server first, but if we hit an exception, terminate
         try
