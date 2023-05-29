@@ -2,10 +2,16 @@
 lib
 build
 bin
+target
 
 # Ignore any testing directories
 cycle
 cpm 
+
+# Ignore Eclipse artifacts
+.project
+.settings
+.classpath
 
 # Ignore logging artifacts
 *.log
