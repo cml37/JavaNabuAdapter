@@ -11,9 +11,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -110,7 +110,7 @@ public class NHACPExtension implements ServerExtension
     /**
      * Collection of active NHACP sessions
      */
-    private HashMap<Integer, Optional<NHACPSession>> sessions;
+    private ConcurrentHashMap<Integer, Optional<NHACPSession>> sessions;
 
     /**
      * Constructor
@@ -1287,7 +1287,7 @@ public class NHACPExtension implements ServerExtension
      */
     private void initialize()
     {
-        this.sessions = new HashMap<Integer, Optional<NHACPSession>>();
+        this.sessions = new ConcurrentHashMap<Integer, Optional<NHACPSession>>();
 
         for (int b = 0; b <= ConversionUtils.MAX_BYTE_VALUE; b++)
         {
