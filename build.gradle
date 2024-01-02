@@ -26,6 +26,8 @@ java {
 }
 
 jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+
     manifest {
         attributes 'Main-Class': 'com.lenderman.nabu.adapter.NabuAdapter'
     }
@@ -47,11 +49,11 @@ dependencies {
 
 task downloadCpmFiles(type: Download) {
     src ([
-        'https://nabunetwork.com/cpm/CPM22.SYS',
-        'https://nabunetwork.com/cpm/FONT.GRB',
-        'https://nabunetwork.com/cpm/NDSK_A.IMG',
-        'https://nabunetwork.com/cpm/NDSK_B.IMG',
-        'https://nabunetwork.com/cpm/NDSK_BOOT.nabu'
+        'https://nabu.lenderman.com/cpm/CPM22.SYS',
+        'https://nabu.lenderman.com/cpm/FONT.GRB',
+        'https://nabu.lenderman.com/cpm/NDSK_A.IMG',
+        'https://nabu.lenderman.com/cpm/NDSK_B.IMG',
+        'https://nabu.lenderman.com/cpm/NDSK_BOOT.nabu'
     ])
     dest "cpm"
     onlyIfModified true
