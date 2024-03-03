@@ -289,7 +289,8 @@ public class NabuServer
                 if (this.settings.getPath().toLowerCase().endsWith(".nabu")
                         && segmentNumber == 1)
                 {
-                    data = loader.tryGetData(this.settings.getPath());
+                    data = loader.tryGetData(this.settings.getPath(),
+                            this.settings.getPreservedPath());
                     if (data.isPresent())
                     {
                         logger.debug("Loading NABU segment {} from {}",
@@ -302,7 +303,8 @@ public class NabuServer
                 else if (this.settings.getPath().toLowerCase().endsWith(".pak")
                         && segmentNumber == 1)
                 {
-                    data = loader.tryGetData(this.settings.getPath());
+                    data = loader.tryGetData(this.settings.getPath(),
+                            this.settings.getPreservedPath());
                     if (data.isPresent())
                     {
                         logger.debug("Creating NABU segment {} from {}",
@@ -322,7 +324,8 @@ public class NabuServer
                         String segmentFullPath = directory.get()
                                 + loader.getPathSeparator() + segmentName
                                 + ".nabu";
-                        data = loader.tryGetData(segmentFullPath);
+                        data = loader.tryGetData(segmentFullPath,
+                                this.settings.getPreservedPath());
                         if (data.isPresent())
                         {
                             logger.debug("Creating NABU segment {} from {}",
@@ -354,7 +357,8 @@ public class NabuServer
                                 "Could not load requested headless target, reloading menu");
 
                         loader = new LocalLoader();
-                        data = loader.tryGetData(Settings.HeadlessBootLoader);
+                        data = loader.tryGetData(Settings.HeadlessBootLoader,
+                                this.settings.getPreservedPath());
                         if (data.isPresent())
                         {
                             segment = Optional.of(SegmentManager

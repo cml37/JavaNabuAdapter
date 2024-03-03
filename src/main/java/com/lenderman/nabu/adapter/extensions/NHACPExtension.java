@@ -314,7 +314,8 @@ public class NHACPExtension implements ServerExtension
             if (!fullPathAndFilename.toFile().exists())
             {
                 WebLoader webLoader = new WebLoader();
-                Optional<byte[]> data = webLoader.tryGetData(fileName);
+                Optional<byte[]> data = webLoader.tryGetData(fileName,
+                        this.settings.getPreservedPath());
                 Files.write(fullPathAndFilename, data.get());
             }
         }

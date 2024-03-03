@@ -123,7 +123,7 @@ public class Settings
      */
     private enum ParseState
     {
-        start, port, mode, path
+        start, port, mode, path, preservepath
     }
 
     /**
@@ -150,6 +150,11 @@ public class Settings
      * The path to use for cached nabu files
      */
     private String path;
+
+    /**
+     * The path to use for preseving nabu files
+     */
+    private String presevedPath = null;
 
     /**
      * The TCP/IP port used by the NABU
@@ -248,6 +253,14 @@ public class Settings
     public String getPath()
     {
         return path;
+    }
+
+    /**
+     * @return String
+     */
+    public String getPreservedPath()
+    {
+        return presevedPath;
     }
 
     /**
@@ -352,6 +365,7 @@ public class Settings
                     {
                         this.path = argument;
                     }
+                    parseState = ParseState.start;
                     break;
 
                 case start:
@@ -369,10 +383,19 @@ public class Settings
                     case "-path":
                         parseState = ParseState.path;
                         break;
+                    case "-preservepath":
+                        parseState = ParseState.preservepath;
+                        break;
                     default:
                         this.DisplayHelp();
                         break;
                     }
+                    break;
+                case preservepath:
+                    this.presevedPath = argument;
+                    parseState = ParseState.start;
+                    break;
+                default:
                     break;
                 }
             }
@@ -404,13 +427,17 @@ public class Settings
                 "port: Which serial port or TCPIP port to listen to, examples would be COM4 or 5816");
         System.out.println(
                 "askforchannel: Sets the flag to prompt the nabu for a channel");
-        System.out.println("path: can be one of the following options");
+        System.out.println("-path: can be one of the following options");
         System.out.println();
         System.out.println(
                 "       Local path for files, defaults to current directory");
         System.out.println(
                 "       url to cloud location, example https://www.mydomain.com/paklocation");
         System.out.println("       headless, to run in headless mode");
+        System.out.println();
+        System.out.println(
+                "-preservepath: (for web mode only) output location to save off data files as they are accessed");
+        System.out.println();
         System.out.println();
         System.out.println("Serial Mode example:");
         System.out.println(
