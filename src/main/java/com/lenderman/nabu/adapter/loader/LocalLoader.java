@@ -36,7 +36,8 @@ public class LocalLoader implements Loader
      * {@inheritDoc}
      */
     @Override
-    public Optional<byte[]> tryGetData(String path) throws Exception
+    public Optional<byte[]> tryGetData(String path, String preserveDataPath)
+            throws Exception
     {
         if (path.equalsIgnoreCase(Settings.HeadlessBootLoader))
         {

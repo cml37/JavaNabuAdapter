@@ -233,7 +233,8 @@ public class FileStoreExtensions implements ServerExtension
                 Optional<byte[]> data;
 
                 WebLoader webLoader = new WebLoader();
-                data = webLoader.tryGetData(fileName);
+                data = webLoader.tryGetData(fileName,
+                        this.settings.getPreservedPath());
                 Files.write(fullPathAndFilename, data.get());
             }
         }

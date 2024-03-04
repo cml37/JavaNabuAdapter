@@ -1,5 +1,7 @@
 package com.lenderman.nabu.adapter.loader;
 
+import java.io.ByteArrayOutputStream;
+
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
  * Copyright(c) 2022 NabuNetwork.com
@@ -25,17 +27,29 @@ package com.lenderman.nabu.adapter.loader;
 
 import java.net.URI;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Optional;
-import java.io.ByteArrayOutputStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.lenderman.nabu.adapter.utilities.WebUtils;
 
 public class WebLoader implements Loader
 {
+
+    /**
+     * Class Logger
+     */
+    private static final Logger logger = LogManager.getLogger(WebLoader.class);
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<byte[]> tryGetData(String path) throws Exception
+    public Optional<byte[]> tryGetData(String path, String preserveDataPath)
+            throws Exception
     {
         URLConnection connection = WebUtils.openWebClient(path);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -46,6 +60,16 @@ public class WebLoader implements Loader
             buffer.write(bytes, 0, len);
         }
         buffer.close();
+
+        if (preserveDataPath != null)
+        {
+            logger.debug("Preserving {}", path);
+            Path outputFile = Paths.get(preserveDataPath, getPathSeparator(),
+                    new URI(path).getPath());
+            Files.createDirectories(outputFile.getParent());
+            Files.write(outputFile, buffer.toByteArray(),
+                    StandardOpenOption.CREATE);
+        }
         return (Optional.of(buffer.toByteArray()));
     }
 
