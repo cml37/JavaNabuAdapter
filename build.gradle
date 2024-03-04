@@ -49,11 +49,11 @@ dependencies {
 
 task downloadCpmFiles(type: Download) {
     src ([
-        'https://thenabunetwork.com/cpm/CPM22.SYS',
-        'https://thenabunetwork.com/cpm/FONT.GRB',
-        'https://thenabunetwork.com/cpm/NDSK_A.IMG',
-        'https://thenabunetwork.com/cpm/NDSK_B.IMG',
-        'https://thenabunetwork.com/cpm/NDSK_BOOT.nabu'
+        'https://adaptor.thenabunetwork.com/cpm/CPM22.SYS',
+        'https://adaptor.thenabunetwork.com/cpm/FONT.GRB',
+        'https://adaptor.thenabunetwork.com/cpm/NDSK_A.IMG',
+        'https://adaptor.thenabunetwork.com/cpm/NDSK_B.IMG',
+        'https://adaptor.thenabunetwork.com/cpm/NDSK_BOOT.nabu'
     ])
     dest "cpm"
     onlyIfModified true
