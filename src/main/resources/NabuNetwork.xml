@@ -3,22 +3,22 @@
   <Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>NABU 1984 Cycle (need to verify)</Name>
-    <Url>https://thenabunetwork.com/cycle</Url>
+    <Url>https://adaptor.thenabunetwork.com/cycle</Url>
   </Target>
   <!--Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>NABU Network 1984 Cycle v1 (Dec 2022)</Name>
-    <Url>https://thenabunetwork.com/cycle1984</Url>
+    <Url>https://adaptor.thenabunetwork.com/cycle1984</Url>
   </Target-->
   <!--Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>NABU Network 1984 Cycle v2 (Mar 2023)</Name>
-    <Url>https://thenabunetwork.com/cycle2022</Url>
+    <Url>https://adaptor.thenabunetwork.com/cycle2022</Url>
   </Target-->
   <!--Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>NABU Net 1986 Leos Cycle (Feb 2024)</Name>
-    <Url>https://thenabunetwork.com/cycle1986</Url>
+    <Url>https://adaptor.thenabunetwork.com/cycle1986</Url>
   </Target-->
   <Target>
     <TargetType>NabuNetwork</TargetType>
@@ -28,201 +28,201 @@
   <Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>NABU Field Diagnostics Tests v2.2</Name>
-    <Url>https://thenabunetwork.com/tools/pctools/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/tools/pctools/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>NABU BASIC 2.0</Name>
-    <Url>https://thenabunetwork.com/fun/tools/msbasic.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/fun/tools/msbasic.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Arkanoid (MSX Port)</Name>
-    <Url>https://thenabunetwork.com/gameroom/arkanoid/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/arkanoid/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Choplifter (MSX Port)</Name>
-    <Url>https://thenabunetwork.com/gameroom/choplifter/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/choplifter/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Aqua Attack (Interphase)</Name>
-    <Url>https://thenabunetwork.com/gameroom/aquaattack/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/aquaattack/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>B.C.'s Quest for Tires</Name>
-    <Url>https://thenabunetwork.com/gameroom/questfortires/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/questfortires/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Flip and Flop</Name>
-    <Url>https://thenabunetwork.com/gameroom/flipandflop/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/flipandflop/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Galaxian</Name>
-    <Url>https://thenabunetwork.com/gameroom/galaxian/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/galaxian/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Heavyweight Boxing</Name>
-    <Url>https://thenabunetwork.com/gameroom/heavyweightboxing/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/heavyweightboxing/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Laser Attack</Name>
-    <Url>https://thenabunetwork.com/gameroom/laserattack/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/laserattack/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Mania aka Heli Tank</Name>
-    <Url>https://thenabunetwork.com/gameroom/mania/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/mania/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Miner 2049er</Name>
-    <Url>https://thenabunetwork.com/gameroom/miner2049er/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/miner2049er/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Moon Sweeper</Name>
-    <Url>https://thenabunetwork.com/gameroom/moonsweeper/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/moonsweeper/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Mummy's Tomb</Name>
-    <Url>https://thenabunetwork.com/gameroom/mummystomb/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/mummystomb/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Pac-Man</Name>
-    <Url>https://thenabunetwork.com/gameroom/pacman/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/pacman/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Q*Bert</Name>
-    <Url>https://thenabunetwork.com/gameroom/qbert/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/qbert/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>River Raid (MSX Port)</Name>
-    <Url>https://thenabunetwork.com/gameroom/riverraid/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/riverraid/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Time Pilot</Name>
-    <Url>https://thenabunetwork.com/gameroom/timepilot/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/timepilot/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Track and Field</Name>
-    <Url>https://thenabunetwork.com/gameroom/trackandfield/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/trackandfield/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>UFO (Space Invaders Clone)</Name>
-    <Url>https://thenabunetwork.com/gameroom/ufos/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/ufos/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Gameroom</TargetType>
     <Name>Wing War (Imagic)</Name>
-    <Url>https://thenabunetwork.com/gameroom/wingwar/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/gameroom/wingwar/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Demo: Mandlebrot</Name>
-    <Url>https://thenabunetwork.com/homebrew/demos/mandelbrot/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/demos/mandelbrot/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Demo: Digi Rain Matrix (2023)</Name>
-    <Url>https://thenabunetwork.com/homebrew/demos/digirain/digirain.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/demos/digirain/digirain.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Demo: Plasma v0.2</Name>
-    <Url>https://thenabunetwork.com/homebrew/demos/plasma/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/demos/plasma/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Alien</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/alien/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/alien/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Amazon Woman</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/amazonwoman/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/amazonwoman/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Angry Goblin</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/angrygoblin/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/angrygoblin/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Car Babe</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/carbabe/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/carbabe/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Death</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/death/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/death/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: DJ Sures</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/dj/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/dj/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Dragon Party</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/dragonparty/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/dragonparty/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Lars Picture 1 (NSFW)</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/larspicture/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/larspicture/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Leo Binkowski</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/leo/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/leo/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Metropolis Android</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/metropolisandroid/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/metropolisandroid/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Rambo</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/rambo/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/rambo/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Picture: Spider Man</Name>
-    <Url>https://thenabunetwork.com/homebrew/pictures/spiderman/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/pictures/spiderman/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Game: Nabutris (2022)</Name>
-    <Url>https://thenabunetwork.com/homebrew/games/nabutris/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/games/nabutris/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Game: Tetris 3.4 (ProductionDave 2023)</Name>
-    <Url>https://thenabunetwork.com/homebrew/games/tetris/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/games/tetris/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Game: Snake 3.4 (ProductionDave 2023)</Name>
-    <Url>https://thenabunetwork.com/homebrew/games/snake/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/games/snake/loader.nabu</Url>
   </Target>
   <Target>
     <TargetType>Homebrew</TargetType>
     <Name>Game: Deep Dungeon Adventure (2023)</Name>
-    <Url>https://thenabunetwork.com/homebrew/games/deepdungeonadventure/loader.nabu</Url>
+    <Url>https://adaptor.thenabunetwork.com/homebrew/games/deepdungeonadventure/loader.nabu</Url>
   </Target>
 </ArrayOfTarget>

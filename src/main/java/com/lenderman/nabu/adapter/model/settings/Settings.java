@@ -53,7 +53,7 @@ public class Settings
     /**
      * NABU Network headless online config file
      */
-    private static String NabuNetworkHeadlessOnlineConfigFile = "https://thenabunetwork.com/"
+    private static String NabuNetworkHeadlessOnlineConfigFile = "https://adaptor.thenabunetwork.com/"
             + NabuNetworkHeadlessConfigFile;
     /**
      * Name of Headless bootloader program
@@ -92,7 +92,7 @@ public class Settings
         allowedExtensions.add("img");
 
         allowedUri.add("cloud.nabu.ca");
-        allowedUri.add("thenabunetwork.com");
+        allowedUri.add("adaptor.thenabunetwork.com");
         allowedUri.add("www.nabu.ca");
 
         topLevelHeadlessMenu.add("TheNabuNetwork.com");
@@ -444,7 +444,7 @@ public class Settings
         System.out.println("");
         System.out.println("TCPIP Mode example:");
         System.out.println(
-                "NabuAdaptor.exe -Mode TCPIP -Port 5816 -path https://thenabunetwork.com/cycle2022");
+                "NabuAdaptor.exe -Mode TCPIP -Port 5816 -path https://adaptor.thenabunetwork.com/cycle2022");
         System.exit(0);
     }
 }
