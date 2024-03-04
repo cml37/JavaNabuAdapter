@@ -53,7 +53,7 @@ public class Settings
     /**
      * NABU Network headless online config file
      */
-    private static String NabuNetworkHeadlessOnlineConfigFile = "https://www.thenabunetwork.com/"
+    private static String NabuNetworkHeadlessOnlineConfigFile = "https://thenabunetwork.com/"
             + NabuNetworkHeadlessConfigFile;
     /**
      * Name of Headless bootloader program
@@ -92,7 +92,7 @@ public class Settings
         allowedExtensions.add("img");
 
         allowedUri.add("cloud.nabu.ca");
-        allowedUri.add("www.thenabunetwork.com");
+        allowedUri.add("thenabunetwork.com");
         allowedUri.add("www.nabu.ca");
 
         topLevelHeadlessMenu.add("TheNabuNetwork.com");
@@ -418,7 +418,7 @@ public class Settings
         System.out.println("NABU console server usage");
         System.out.println("");
         System.out.println("Parameters:");
-        System.out.println("-mode -port -askforchannel -path");
+        System.out.println("-mode -port -askforchannel -path -preservepath");
         System.out.println();
         System.out.println(
                 "mode options: Serial, TCPIP - listen to serial port or TCPIP port");
@@ -435,7 +435,7 @@ public class Settings
         System.out.println("       headless, to run in headless mode");
         System.out.println();
         System.out.println(
-                "-preservepath: (for web mode only) output location to save off data files as they are accessed");
+                "preservepath: (for web mode only) output location to save off data files as they are accessed");
         System.out.println();
         System.out.println();
         System.out.println("Serial Mode example:");
@@ -444,7 +444,7 @@ public class Settings
         System.out.println("");
         System.out.println("TCPIP Mode example:");
         System.out.println(
-                "NabuAdaptor.exe -Mode TCPIP -Port 5816 -path https://www.thenabunetwork.com/cycle2022");
+                "NabuAdaptor.exe -Mode TCPIP -Port 5816 -path https://thenabunetwork.com/cycle2022");
         System.exit(0);
     }
 }

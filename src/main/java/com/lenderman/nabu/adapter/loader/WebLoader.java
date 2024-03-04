@@ -37,7 +37,6 @@ import com.lenderman.nabu.adapter.utilities.WebUtils;
 
 public class WebLoader implements Loader
 {
-
     /**
      * Class Logger
      */
@@ -58,7 +57,6 @@ public class WebLoader implements Loader
         {
             buffer.write(bytes, 0, len);
         }
-        buffer.close();
 
         if (preserveDataPath != null)
         {
@@ -69,6 +67,7 @@ public class WebLoader implements Loader
             Files.write(outputFile, buffer.toByteArray(),
                     StandardOpenOption.CREATE);
         }
+        buffer.close();
         return (Optional.of(buffer.toByteArray()));
     }
 
