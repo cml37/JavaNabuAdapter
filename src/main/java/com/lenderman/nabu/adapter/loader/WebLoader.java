@@ -1,7 +1,5 @@
 package com.lenderman.nabu.adapter.loader;
 
-import java.io.ByteArrayOutputStream;
-
 /*
  * Copyright(c) 2023 "RetroTech" Chris Lenderman
  * Copyright(c) 2022 NabuNetwork.com
@@ -25,6 +23,7 @@ import java.io.ByteArrayOutputStream;
  * SOFTWARE.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URLConnection;
 import java.nio.file.Files;

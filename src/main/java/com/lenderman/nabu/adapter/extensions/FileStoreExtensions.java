@@ -62,7 +62,6 @@ import com.lenderman.nabu.adapter.utilities.WebUtils;
  */
 public class FileStoreExtensions implements ServerExtension
 {
-
     /**
      * Class Logger
      */
@@ -728,7 +727,7 @@ public class FileStoreExtensions implements ServerExtension
 
     /**
      * Return a FileDetails based on the filename
-     * 
+     *
      * @param filePath
      */
     private void fileDetails(Path filePath) throws Exception
@@ -849,7 +848,7 @@ public class FileStoreExtensions implements ServerExtension
 
     /**
      * File Size
-     * 
+     *
      * @param fileName
      * @return file size
      */
@@ -868,7 +867,7 @@ public class FileStoreExtensions implements ServerExtension
 
     /**
      * Sanitize Filename
-     * 
+     *
      * @param path
      * @return String
      */
