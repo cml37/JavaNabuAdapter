@@ -53,7 +53,7 @@ public class Settings
     /**
      * NABU Network headless online config file
      */
-    private static String NabuNetworkHeadlessOnlineConfigFile = "https://www.nabunetwork.com/"
+    private static String NabuNetworkHeadlessOnlineConfigFile = "https://www.thenabunetwork.com/"
             + NabuNetworkHeadlessConfigFile;
     /**
      * Name of Headless bootloader program
@@ -92,11 +92,10 @@ public class Settings
         allowedExtensions.add("img");
 
         allowedUri.add("cloud.nabu.ca");
-        allowedUri.add("www.nabunetwork.com");
+        allowedUri.add("www.thenabunetwork.com");
         allowedUri.add("www.nabu.ca");
-        allowedUri.add("www.retrotechchris.com");
 
-        topLevelHeadlessMenu.add("NabuNetwork.com");
+        topLevelHeadlessMenu.add("TheNabuNetwork.com");
         topLevelHeadlessMenu.add("Homebrew Software");
         topLevelHeadlessMenu.add("Game Room");
         topLevelHeadlessMenu.add("Local Path");
@@ -445,7 +444,7 @@ public class Settings
         System.out.println("");
         System.out.println("TCPIP Mode example:");
         System.out.println(
-                "NabuAdaptor.exe -Mode TCPIP -Port 5816 -path https://www.nabunetwork.com/cycle2022");
+                "NabuAdaptor.exe -Mode TCPIP -Port 5816 -path https://www.thenabunetwork.com/cycle2022");
         System.exit(0);
     }
 }
