@@ -5,21 +5,26 @@
     <Name>NABU 1984 Cycle (need to verify)</Name>
     <Url>https://adaptor.thenabunetwork.com/cycle</Url>
   </Target>
-  <!--Target>
+  <Target>
     <TargetType>NabuNetwork</TargetType>
-    <Name>NABU Network 1984 Cycle v1 (Dec 2022)</Name>
-    <Url>https://adaptor.thenabunetwork.com/cycle1984</Url>
-  </Target-->
-  <!--Target>
+    <Name>NABU Network 1984 Cycle v1</Name>
+    <Url>https://adaptor.thenabunetwork.com/cycle1</Url>
+  </Target>
+  <Target>
     <TargetType>NabuNetwork</TargetType>
-    <Name>NABU Network 1984 Cycle v2 (Mar 2023)</Name>
-    <Url>https://adaptor.thenabunetwork.com/cycle2022</Url>
-  </Target-->
-  <!--Target>
+    <Name>NABU Network 1984 Cycle v2</Name>
+    <Url>https://adaptor.thenabunetwork.com/cycle2</Url>
+  </Target>
+  <Target>
     <TargetType>NabuNetwork</TargetType>
-    <Name>NABU Net 1986 Leos Cycle (Feb 2024)</Name>
-    <Url>https://adaptor.thenabunetwork.com/cycle1986</Url>
-  </Target-->
+    <Name>NABU Network 1996 Cycle v3</Name>
+    <Url>https://adaptor.thenabunetwork.com/cycle3</Url>
+  </Target>
+  <Target>
+    <TargetType>NabuNetwork</TargetType>
+    <Name>NABU Network DJ Cycle</Name>
+    <Url>https://adaptor.thenabunetwork.com/cycledj</Url>
+  </Target>
   <Target>
     <TargetType>NabuNetwork</TargetType>
     <Name>CP/M 2.2 (ISHKUR)</Name>

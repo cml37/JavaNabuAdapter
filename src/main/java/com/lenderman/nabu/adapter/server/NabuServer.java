@@ -326,6 +326,14 @@ public class NabuServer
                                 + ".nabu";
                         data = loader.tryGetData(segmentFullPath,
                                 this.settings.getPreservedPath());
+                        if (!data.isPresent())
+                        {
+                            segmentFullPath = directory.get()
+                                    + loader.getPathSeparator() + segmentName
+                                    + ".NABU";
+                            data = loader.tryGetData(segmentFullPath,
+                                    this.settings.getPreservedPath());
+                        }
                         if (data.isPresent())
                         {
                             logger.debug("Creating NABU segment {} from {}",
@@ -339,11 +347,26 @@ public class NabuServer
                             String pakFullPath = directory.get()
                                     + loader.getPathSeparator() + segmentName
                                     + ".pak";
-                            logger.debug("Loading NABU segment {} from {}",
-                                    String.format("%06x", segmentNumber),
-                                    pakFullPath);
-                            segment = Optional.of(SegmentManager
-                                    .loadPackets(segmentNumber, data.get()));
+                            data = loader.tryGetData(pakFullPath,
+                                    this.settings.getPreservedPath());
+                            if (!data.isPresent())
+                            {
+                                pakFullPath = directory.get()
+                                        + loader.getPathSeparator()
+                                        + segmentName + ".PAK";
+                                data = loader.tryGetData(pakFullPath,
+                                        this.settings.getPreservedPath());
+                            }
+
+                            if (data.isPresent())
+                            {
+                                logger.debug("Loading NABU segment {} from {}",
+                                        String.format("%06x", segmentNumber),
+                                        pakFullPath);
+                                segment = Optional
+                                        .of(SegmentManager.loadPackets(
+                                                segmentNumber, data.get()));
+                            }
                         }
                     }
                 }

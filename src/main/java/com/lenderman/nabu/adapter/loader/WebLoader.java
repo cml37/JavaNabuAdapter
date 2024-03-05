@@ -47,28 +47,34 @@ public class WebLoader implements Loader
      */
     @Override
     public Optional<byte[]> tryGetData(String path, String preserveDataPath)
-            throws Exception
     {
-        URLConnection connection = WebUtils.openWebClient(path);
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] bytes = new byte[8192];
-        int len;
-        while ((len = connection.getInputStream().read(bytes)) > 0)
+        try
         {
-            buffer.write(bytes, 0, len);
-        }
+            URLConnection connection = WebUtils.openWebClient(path);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] bytes = new byte[8192];
+            int len;
+            while ((len = connection.getInputStream().read(bytes)) > 0)
+            {
+                buffer.write(bytes, 0, len);
+            }
 
-        if (preserveDataPath != null)
-        {
-            logger.debug("Preserving {}", path);
-            Path outputFile = Paths.get(preserveDataPath, getPathSeparator(),
-                    new URI(path).getPath());
-            Files.createDirectories(outputFile.getParent());
-            Files.write(outputFile, buffer.toByteArray(),
-                    StandardOpenOption.CREATE);
+            if (preserveDataPath != null)
+            {
+                logger.debug("Preserving {}", path);
+                Path outputFile = Paths.get(preserveDataPath,
+                        getPathSeparator(), new URI(path).getPath());
+                Files.createDirectories(outputFile.getParent());
+                Files.write(outputFile, buffer.toByteArray(),
+                        StandardOpenOption.CREATE);
+            }
+            buffer.close();
+            return (Optional.of(buffer.toByteArray()));
         }
-        buffer.close();
-        return (Optional.of(buffer.toByteArray()));
+        catch (Exception ex)
+        {
+            return Optional.empty();
+        }
     }
 
     /**
