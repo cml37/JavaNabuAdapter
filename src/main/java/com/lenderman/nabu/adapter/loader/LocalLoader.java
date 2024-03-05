@@ -37,12 +37,19 @@ public class LocalLoader implements Loader
      */
     @Override
     public Optional<byte[]> tryGetData(String path, String preserveDataPath)
-            throws Exception
     {
         if (path.equalsIgnoreCase(Settings.HeadlessBootLoader))
         {
-            return Optional.of(IOUtils.toByteArray(getClass().getClassLoader()
-                    .getResourceAsStream(Settings.HeadlessBootResource)));
+            try
+            {
+                return Optional.of(IOUtils.toByteArray(
+                        getClass().getClassLoader().getResourceAsStream(
+                                Settings.HeadlessBootResource)));
+            }
+            catch (Exception ex)
+            {
+                return Optional.empty();
+            }
         }
 
         try
@@ -65,7 +72,14 @@ public class LocalLoader implements Loader
     {
         try
         {
-            return Optional.of(Paths.get(path).getParent().toString());
+            if (Files.isDirectory(Paths.get(path)))
+            {
+                return Optional.of(path);
+            }
+            else
+            {
+                return Optional.of(Paths.get(path).getParent().toString());
+            }
         }
         catch (Exception ex)
         {

@@ -35,8 +35,7 @@ public interface Loader
      *        desire to preserve data)
      * @return Optional<byte[]>
      */
-    public Optional<byte[]> tryGetData(String path, String preserveDataPath)
-            throws Exception;
+    public Optional<byte[]> tryGetData(String path, String preserveDataPath);
 
     /**
      * Try to get the containing directory of the specified file
