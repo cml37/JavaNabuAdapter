@@ -94,7 +94,7 @@ public class SerialConnection implements Connection
     {
         this.serialPort = SerialPort.getCommPort(settings.getPort());
         serialPort.setBaudRate(Integer.parseInt(settings.getBaudRate()));
-        serialPort.setNumStopBits(SerialPort.TWO_STOP_BITS);
+        serialPort.setNumStopBits(Integer.parseInt(settings.getStopBits()));
         serialPort.setParity(SerialPort.NO_PARITY);
         serialPort.setNumDataBits(8);
         serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0,

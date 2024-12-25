@@ -770,6 +770,7 @@ public class FileStoreExtensions implements ServerExtension
                     nabuFileHandle.get().getFullFilename().toFile(), "r");
             byte[] data = new byte[length];
             file.read(data, (int) nabuFileHandle.get().getIndex(), length);
+            file.close();
             nabuFileHandle.get()
                     .setIndex(nabuFileHandle.get().getIndex() + length);
 

@@ -93,6 +93,7 @@ public class Settings
 
         allowedUri.add("cloud.nabu.ca");
         allowedUri.add("adaptor.thenabunetwork.com");
+        allowedUri.add("withretro.com");
         allowedUri.add("www.nabu.ca");
 
         topLevelHeadlessMenu.add("TheNabuNetwork.com");
@@ -122,7 +123,7 @@ public class Settings
      */
     private enum ParseState
     {
-        start, port, mode, path, preservepath
+        start, port, mode, baud, stopbits, path, preservepath
     }
 
     /**
@@ -134,6 +135,11 @@ public class Settings
      * The baud rate used by the nabu
      */
     private String baudRate = "111865";
+
+    /**
+     * The stop bits used by the nabu
+     */
+    private String stopBits = "2";
 
     /**
      * The serial port used by the nabu
@@ -239,6 +245,14 @@ public class Settings
     }
 
     /**
+     * @return stopBits
+     */
+    public String getStopBits()
+    {
+        return stopBits;
+    }
+
+    /**
      * @return OperatingMode
      */
     public OperatingMode getOperatingMode()
@@ -278,7 +292,6 @@ public class Settings
             stream = WebUtils.openWebClient(NabuNetworkHeadlessOnlineConfigFile)
                     .getInputStream();
             logger.debug("Cycles loaded from web");
-
         }
         catch (Exception ex)
         {
@@ -353,6 +366,30 @@ public class Settings
                     parseState = ParseState.start;
                     break;
 
+                case baud:
+                    switch (this.operatingMode)
+                    {
+                    case Serial:
+                        this.baudRate = argument;
+                        break;
+                    case TCPIP:
+                        break;
+                    }
+                    parseState = ParseState.start;
+                    break;
+
+                case stopbits:
+                    switch (this.operatingMode)
+                    {
+                    case Serial:
+                        this.stopBits = argument;
+                        break;
+                    case TCPIP:
+                        break;
+                    }
+                    parseState = ParseState.start;
+                    break;
+
                 case path:
                     if (argument.equalsIgnoreCase("headless"))
                     {
@@ -375,6 +412,12 @@ public class Settings
                         break;
                     case "-port":
                         parseState = ParseState.port;
+                        break;
+                    case "-baud":
+                        parseState = ParseState.baud;
+                        break;
+                    case "-stopbits":
+                        parseState = ParseState.stopbits;
                         break;
                     case "-askforchannel":
                         this.askForChannel = true;
@@ -426,7 +469,7 @@ public class Settings
                 "port: Which serial port or TCPIP port to listen to, examples would be COM4 or 5816");
         System.out.println(
                 "askforchannel: Sets the flag to prompt the nabu for a channel");
-        System.out.println("-path: can be one of the following options");
+        System.out.println("path: can be one of the following options");
         System.out.println();
         System.out.println(
                 "       Local path for files, defaults to current directory");
